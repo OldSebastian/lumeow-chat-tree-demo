@@ -386,6 +386,43 @@
       z-index: 6;
     }
 
+    .branch-toggle {
+      position: absolute;
+      left: calc(var(--x) * 1px);
+      top: calc(var(--y) * 1px);
+      z-index: 7;
+      min-width: 36px;
+      height: 26px;
+      padding: 0 10px;
+      transform: translate(34px, 8px);
+      border: 1px solid rgba(143, 130, 247, 0.2);
+      border-radius: 999px;
+      color: rgba(247, 247, 248, 0.82);
+      background: rgba(21, 21, 24, 0.84);
+      box-shadow: 0 12px 34px -22px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.045) inset;
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      font-size: 12px;
+      font-weight: 760;
+      line-height: 1;
+      transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+    }
+
+    .branch-toggle:hover,
+    .branch-toggle:focus-visible {
+      outline: none;
+      transform: translate(34px, 7px);
+      border-color: rgba(143, 130, 247, 0.48);
+      background: rgba(45, 40, 70, 0.92);
+      box-shadow: 0 16px 44px -24px rgba(143, 130, 247, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.07) inset;
+    }
+
+    .branch-toggle.expanded {
+      border-color: rgba(86, 200, 245, 0.36);
+      color: rgba(232, 246, 255, 0.92);
+      background: rgba(32, 58, 72, 0.82);
+    }
+
     .path-panel {
       position: absolute;
       left: 24px;
@@ -584,6 +621,7 @@
     .tooltip.show {
       opacity: 1;
       transform: translateY(0);
+      pointer-events: auto;
     }
 
     .tooltip__avatar {
@@ -628,6 +666,39 @@
       font-weight: 400;
       line-height: 1.5;
       white-space: pre-line;
+    }
+
+    .tooltip__anchor {
+      align-self: flex-start;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      min-height: 30px;
+      margin-top: 2px;
+      padding: 6px 10px;
+      border: 1px solid rgba(143, 130, 247, 0.26);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, 0.9);
+      background: rgba(143, 130, 247, 0.12);
+      font-size: 12px;
+      font-weight: 720;
+      line-height: 1;
+      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+    }
+
+    .tooltip__anchor::after {
+      content: "↗";
+      color: rgba(193, 186, 255, 0.92);
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .tooltip__anchor:hover,
+    .tooltip__anchor:focus-visible {
+      outline: none;
+      border-color: rgba(143, 130, 247, 0.48);
+      background: rgba(143, 130, 247, 0.2);
+      transform: translateY(-1px);
     }
 
     .tooltip__arrow {
@@ -711,6 +782,19 @@
       .chat-node {
         width: 52px;
         height: 52px;
+      }
+
+      .branch-toggle {
+        height: 24px;
+        min-width: 34px;
+        padding: 0 9px;
+        transform: translate(31px, 7px);
+        font-size: 11px;
+      }
+
+      .branch-toggle:hover,
+      .branch-toggle:focus-visible {
+        transform: translate(31px, 6px);
       }
 
       .path-panel {
@@ -822,6 +906,7 @@
     <span class="tooltip__content">
       <span class="tooltip__label" id="tooltipLabel"></span>
       <span class="tooltip__body" id="tooltipBody"></span>
+      <button class="tooltip__anchor" id="tooltipAnchorBtn" type="button">定位会话</button>
     </span>
     <i class="tooltip__arrow" id="tooltipArrow"></i>
   </div>
@@ -946,17 +1031,165 @@
       Object.assign(nodes[id], message);
     });
 
+    function buildLongConversationExample() {
+      Object.keys(nodes).forEach((id) => delete nodes[id]);
+
+      const sceneBeats = [
+        "泳池顶棚的光一点点暗下来，水面像把没有寄出的信收在蓝色里。",
+        "左侧看台传来很轻的回声，像有人刚刚离开，又像某只猫在试探。",
+        "通道里的门牌被水汽糊住，只剩下一小截银色边框还亮着。",
+        "露喵把爪子搭在栏杆上，提醒你每一次停顿都会留下分支。",
+        "远处救生椅下有一只黑影缩了一下，像是不想被这轮对话发现。",
+        "你们沿着池边慢慢往前，脚步声被瓷砖和水声拆成两半。"
+      ];
+      const userMoves = [
+        "我先不急着问结论，继续听露喵怎么判断。",
+        "我把刚才的线索记下来，看看后面会不会用上。",
+        "我想确认一下，这是不是又是一个会影响后续记忆的选择。",
+        "我放慢脚步，尽量不惊动附近睡着的小东西。",
+        "我看向那扇门，但先不伸手碰它。",
+        "我让露喵走在前面，自己跟在后面观察。"
+      ];
+
+      nodes.root = {
+        id: "root",
+        parent: null,
+        type: "assistant",
+        title: "第 001 条",
+        text: "露喵蹲在泳池入口，尾巴轻轻一甩：这是一段很长的会话示例。主线会一直向下延伸，途中有些关键节点会藏着额外分支。",
+        memory: "permanent",
+        main: true,
+        order: 0
+      };
+
+      let parentId = "root";
+      for (let index = 2; index <= 100; index += 1) {
+        const id = `long${index}`;
+        const type = index % 2 === 0 ? "user" : "assistant";
+        const text = type === "user"
+          ? `${userMoves[index % userMoves.length]}（第 ${String(index).padStart(3, "0")} 条）`
+          : `${sceneBeats[index % sceneBeats.length]}露喵说：先把这一步放进当前路径里，后面如果分叉，我们再回来看。`;
+        nodes[id] = {
+          id,
+          parent: parentId,
+          type,
+          title: `第 ${String(index).padStart(3, "0")} 条`,
+          text,
+          memory: index % 25 === 0 ? "permanent" : index % 14 === 0 ? "long" : index % 9 === 0 ? "short" : undefined,
+          main: true,
+          order: 0
+        };
+        parentId = id;
+      }
+
+      const branchSpecs = [
+        {
+          parent: "long12",
+          branches: [
+            ["看台暗门", "我先去看台下面看看，那边好像有门缝。", "露喵压低声音：门缝里有风，但风没有方向。"],
+            ["水面回声", "我停下来听水面的回声。", "水面把你的问题重复了一遍，却少掉了最后一个字。"],
+            ["猫包线索", "我检查一下包里的猫薄荷还在不在。", "露喵闻了闻：还在，只是味道被这条路记住了。"]
+          ]
+        },
+        {
+          parent: "long28",
+          branches: [
+            ["灯牌闪烁", "我抬头看那块闪烁的灯牌。", "灯牌短暂拼出一句话：不要在同一个问题里停太久。"],
+            ["湿脚印", "我跟着湿脚印往边上走两步。", "脚印忽然变成猫爪印，又在第七步消失。"],
+            ["沉默确认", "我什么也不说，只看露喵的反应。", "露喵点头：沉默有时候也是一种选择。"],
+            ["反向试探", "我故意问一个相反的问题。", "露喵眯起眼：这会产生一条备用路径，但不会覆盖当前答案。"]
+          ]
+        },
+        {
+          parent: "long45",
+          branches: [
+            ["旧储物柜", "我打开旧储物柜看一眼。", "里面只有一条干毛巾，毛巾上绣着你刚才说过的话。"],
+            ["跳台边缘", "我走到跳台旁边，但不上去。", "露喵说：不上去也算一次判断，这条分支会记得克制。"],
+            ["蓝色钥匙", "我捡起地上的蓝色钥匙。", "钥匙很轻，像只是一段还没发生的回复。"]
+          ]
+        },
+        {
+          parent: "long63",
+          branches: [
+            ["长廊尽头", "我想去长廊尽头看看。", "尽头并没有墙，只有下一段对话的影子。"],
+            ["回看路径", "我回头看刚才走过的路线。", "你看见每个节点都在微微发光，像是在等待被重新选择。"]
+          ]
+        },
+        {
+          parent: "long81",
+          branches: [
+            ["叫醒小猫", "我要不要叫醒角落那只小猫？", "露喵摇头：可以，但它醒来以后会把路线改写成另一种心情。"],
+            ["绕过水洼", "我绕过水洼，不踩进去。", "水洼里倒映出一条未展开的分支。"],
+            ["靠近窗边", "我靠近窗边看看外面。", "窗外不是夜色，是这段会话滚动到很后面的样子。"]
+          ]
+        },
+        {
+          parent: "long94",
+          branches: [
+            ["最后确认", "我想在结束前确认一次当前选择。", "露喵说：确认会把这条路钉住，但不会锁死其他可能。"],
+            ["存档节点", "把这里当成一个存档点吧。", "这一刻被轻轻折起，放进了当前路径的口袋里。"],
+            ["临时岔路", "我想临时试一条岔路，但不改变主线。", "露喵眨眼：那就展开看看，回来时主线还在原地。"]
+          ]
+        }
+      ];
+
+      branchSpecs.forEach((spec) => {
+        spec.branches.forEach((branch, branchIndex) => {
+          const [title, firstText, secondText] = branch;
+          const side = branchIndex - (spec.branches.length - 1) / 2;
+          const rootId = `${spec.parent}-branch-${branchIndex + 1}`;
+          const secondId = `${rootId}-reply`;
+          const thirdId = `${rootId}-settle`;
+          const firstType = nodes[spec.parent].type === "user" ? "assistant" : "user";
+          const secondType = firstType === "user" ? "assistant" : "user";
+          const thirdType = secondType === "user" ? "assistant" : "user";
+          nodes[rootId] = {
+            id: rootId,
+            parent: spec.parent,
+            type: firstType,
+            title,
+            text: firstText,
+            branchRoot: true,
+            branchGroupParent: spec.parent,
+            order: side || branchIndex + 1
+          };
+          nodes[secondId] = {
+            id: secondId,
+            parent: rootId,
+            type: secondType,
+            title: `${title}回应`,
+            text: secondText,
+            branchGroupParent: spec.parent,
+            order: 0
+          };
+          nodes[thirdId] = {
+            id: thirdId,
+            parent: secondId,
+            type: thirdType,
+            title: `${title}收束`,
+            text: "这条临时分支在这里收束，主线仍然停在原来的纵向路径上。",
+            branchGroupParent: spec.parent,
+            order: 0
+          };
+        });
+      });
+    }
+
+    buildLongConversationExample();
+
     // Fixed spine used ONLY for layout (keeps the centre line straight and the
     // node positions stable). It never changes, so clicking a node only updates
     // highlighting — no node ever shifts position.
-    const layoutSpineLeafId = "m9b2";
-    let activeLeafId = "m9b2";
-    let selectedNodeId = "root";
+    const layoutSpineLeafId = "long100";
+    let activeLeafId = "long100";
+    let selectedNodeId = "long100";
     let layout = { positions: {}, width: 1200, height: 720 };
     let treeZoom = 1;
     let initialZoomApplied = false;
     let userChangedZoom = false;
     let panGesture = null;
+    let tooltipHideTimer = null;
+    const expandedBranchIds = new Set();
     const graphCanvas = document.getElementById("graphCanvas");
     const graphContent = document.getElementById("graphContent");
     const nodeLayer = document.getElementById("nodeLayer");
@@ -967,13 +1200,62 @@
     const tooltipLabel = document.getElementById("tooltipLabel");
     const tooltipBody = document.getElementById("tooltipBody");
     const tooltipArrow = document.getElementById("tooltipArrow");
+    const tooltipAnchorBtn = document.getElementById("tooltipAnchorBtn");
     const toast = document.getElementById("toast");
     const zoomValue = document.getElementById("zoomValue");
     const pathThread = document.getElementById("pathThread");
     const pathCount = document.getElementById("pathCount");
 
+    function isNodeVisible(node) {
+      return !node.branchGroupParent || expandedBranchIds.has(node.branchGroupParent);
+    }
+
     function childrenOf(id) {
-      return Object.values(nodes).filter((node) => node.parent === id);
+      return Object.values(nodes)
+        .filter((node) => node.parent === id && isNodeVisible(node))
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }
+
+    function visibleNodes() {
+      const visible = [];
+      function walk(id) {
+        const node = nodes[id];
+        if (!node || !isNodeVisible(node)) return;
+        visible.push(node);
+        childrenOf(id).forEach((child) => walk(child.id));
+      }
+      walk("root");
+      return visible;
+    }
+
+    function hiddenBranchRootsOf(id) {
+      return Object.values(nodes)
+        .filter((node) => node.parent === id && node.branchRoot)
+        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
+    }
+
+    function hasBranchGroup(id) {
+      return hiddenBranchRootsOf(id).length > 0;
+    }
+
+    function branchGroupContains(parentId, nodeId) {
+      return pathToRoot(nodeId).some((id) => nodes[id]?.branchGroupParent === parentId);
+    }
+
+    function toggleBranchGroup(parentId) {
+      if (!hasBranchGroup(parentId)) return;
+      if (expandedBranchIds.has(parentId)) {
+        expandedBranchIds.delete(parentId);
+        if (branchGroupContains(parentId, activeLeafId)) {
+          activeLeafId = parentId;
+          selectedNodeId = parentId;
+        }
+      } else {
+        expandedBranchIds.add(parentId);
+      }
+      render();
+      const fresh = nodeLayer.querySelector(`[data-node="${parentId}"]`);
+      if (fresh) showTooltip(parentId, fresh);
     }
 
     function pathToRoot(id) {
@@ -1007,6 +1289,7 @@
       const marginX = 96;
       const marginTop = 76;
       const marginBottom = 96;
+      const fixedSpineX = 980;
       const positions = {};
       let maxDepth = 0;
 
@@ -1070,7 +1353,7 @@
         const spineIndex = activeSet.has(id)
           ? childNodes.findIndex((child) => activeSet.has(child.id))
           : -1;
-        const rootX = spineIndex >= 0
+        let rootX = spineIndex >= 0
           ? childRootXs[spineIndex]
           : (childRootXs[0] + childRootXs[childRootXs.length - 1]) / 2;
 
@@ -1095,27 +1378,32 @@
           }
         });
 
+        if (spineIndex >= 0) {
+          const normalizeBy = childRootXs[spineIndex];
+          Object.keys(x).forEach((key) => {
+            x[key] -= normalizeBy;
+          });
+          for (let d = 0; d < left.length; d += 1) {
+            left[d] -= normalizeBy;
+            right[d] -= normalizeBy;
+          }
+          rootX = 0;
+        }
+
         return { rootX, x, left: [rootX, ...left], right: [rootX, ...right] };
       }
 
       const tree = layoutSubtree("root", 0);
       Object.keys(tree.x).forEach((id) => {
         positions[id] = {
-          x: tree.x[id],
+          x: tree.x[id] + fixedSpineX,
           y: marginTop + depthOf(id) * levelSpacing
         };
       });
 
       const minX = Math.min(...Object.values(positions).map((position) => position.x));
       const maxX = Math.max(...Object.values(positions).map((position) => position.x));
-      const offsetX = Math.max(0, marginX - minX);
-      if (offsetX) {
-        Object.values(positions).forEach((position) => {
-          position.x += offsetX;
-        });
-      }
-      const shiftedMaxX = maxX + offsetX;
-      const width = Math.max(1200, shiftedMaxX + marginX);
+      const width = Math.max(1200, maxX + marginX, fixedSpineX + marginX, marginX - minX + fixedSpineX);
       const height = Math.max(650, marginTop + maxDepth * levelSpacing + marginBottom);
       if (!initialZoomApplied && viewport.clientWidth <= 760) {
         treeZoom = clamp((viewport.clientWidth - 28) / width, 0.62, 0.76);
@@ -1169,7 +1457,7 @@
       const inactivePaths = [];
       const activePaths = [];
 
-      Object.values(nodes).forEach((parent) => {
+      visibleNodes().forEach((parent) => {
         const childNodes = childrenOf(parent.id);
         if (!childNodes.length) return;
 
@@ -1192,7 +1480,7 @@
     }
 
     function renderNodes() {
-      nodeLayer.innerHTML = Object.values(nodes)
+      const nodeButtons = visibleNodes()
         .map((node) => {
           const classes = [
             "chat-node",
@@ -1213,6 +1501,24 @@
           `;
         })
         .join("");
+      const branchButtons = visibleNodes()
+        .filter((node) => hasBranchGroup(node.id))
+        .map((node) => {
+          const count = hiddenBranchRootsOf(node.id).length;
+          const expanded = expandedBranchIds.has(node.id);
+          const classes = ["branch-toggle", expanded ? "expanded" : ""].filter(Boolean).join(" ");
+          return `
+            <button
+              class="${classes}"
+              type="button"
+              style="--x:${nodePosition(node.id).x}; --y:${nodePosition(node.id).y}"
+              data-branch-toggle="${node.id}"
+              aria-label="${expanded ? "收起" : "展开"} ${count} 条分支"
+            >${expanded ? "收起" : `+${count}`}</button>
+          `;
+        })
+        .join("");
+      nodeLayer.innerHTML = nodeButtons + branchButtons;
     }
 
     function speakerName(node) {
@@ -1252,7 +1558,7 @@
             node.id === selectedNodeId ? "current" : ""
           ].filter(Boolean).join(" ");
           return `
-            <article class="${classes}">
+            <article class="${classes}" data-path-node="${node.id}">
               <span class="path-avatar ${node.type}" aria-hidden="true"></span>
               <div class="path-message__body">
                 <div class="path-message__meta">
@@ -1272,6 +1578,7 @@
       tooltipAvatar.className = `tooltip__avatar ${node.type}`;
       tooltipLabel.textContent = speakerName(node);
       tooltipBody.textContent = node.text;
+      tooltipAnchorBtn.dataset.node = nodeId;
       tooltip.classList.add("show");
       tooltip.setAttribute("aria-hidden", "false");
 
@@ -1304,8 +1611,27 @@
     }
 
     function hideTooltip() {
+      window.clearTimeout(tooltipHideTimer);
       tooltip.classList.remove("show");
       tooltip.setAttribute("aria-hidden", "true");
+    }
+
+    function scheduleTooltipHide() {
+      window.clearTimeout(tooltipHideTimer);
+      tooltipHideTimer = window.setTimeout(() => {
+        if (!tooltip.matches(":hover")) hideTooltip();
+      }, 90);
+    }
+
+    function selectConversationNode(id, options = {}) {
+      activeLeafId = id;
+      selectedNodeId = id;
+      render();
+      if (options.showTooltipTarget) showTooltip(id, options.showTooltipTarget);
+      window.requestAnimationFrame(() => {
+        const target = pathThread.querySelector(`[data-path-node="${id}"]`);
+        if (target) target.scrollIntoView({ block: "center", behavior: "smooth" });
+      });
     }
 
     function render() {
@@ -1361,6 +1687,14 @@
     document.getElementById("zoomInBtn").addEventListener("click", () => setTreeZoom(treeZoom * 1.16));
     document.getElementById("zoomResetBtn").addEventListener("click", () => setTreeZoom(1));
     document.querySelector(".close-button").addEventListener("click", () => showToast("Demo 中关闭按钮仅展示入口形态。"));
+    tooltip.addEventListener("mouseenter", () => window.clearTimeout(tooltipHideTimer));
+    tooltip.addEventListener("mouseleave", scheduleTooltipHide);
+    tooltipAnchorBtn.addEventListener("click", () => {
+      const id = tooltipAnchorBtn.dataset.node;
+      if (!id) return;
+      selectConversationNode(id);
+      hideTooltip();
+    });
 
     function wheelDeltaInPixels(event) {
       const scale = event.deltaMode === WheelEvent.DOM_DELTA_LINE
@@ -1424,20 +1758,26 @@
     nodeLayer.addEventListener("mouseout", (event) => {
       const nodeButton = event.target.closest?.("[data-node]");
       const next = event.relatedTarget?.closest?.("[data-node]");
-      if (nodeButton && nodeButton !== next) hideTooltip();
+      if (nodeButton && nodeButton !== next && !tooltip.contains(event.relatedTarget)) scheduleTooltipHide();
     });
     nodeLayer.addEventListener("focusin", (event) => {
       const nodeButton = event.target.closest?.("[data-node]");
       if (nodeButton) showTooltip(nodeButton.dataset.node, nodeButton);
     });
-    nodeLayer.addEventListener("focusout", hideTooltip);
+    nodeLayer.addEventListener("focusout", (event) => {
+      if (tooltip.contains(event.relatedTarget)) return;
+      hideTooltip();
+    });
     nodeLayer.addEventListener("click", (event) => {
+      const branchToggle = event.target.closest?.("[data-branch-toggle]");
+      if (branchToggle) {
+        toggleBranchGroup(branchToggle.dataset.branchToggle);
+        return;
+      }
       const nodeButton = event.target.closest?.("[data-node]");
       if (!nodeButton) return;
       const id = nodeButton.dataset.node;
-      activeLeafId = id;
-      selectedNodeId = id;
-      render();
+      selectConversationNode(id);
       const fresh = nodeLayer.querySelector(`[data-node="${id}"]`);
       if (fresh) showTooltip(id, fresh);
     });
