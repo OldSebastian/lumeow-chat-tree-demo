@@ -1,0 +1,1450 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Lumeow 聊天树分支 Demo</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #1d1d1f;
+      --bg-deep: #171719;
+      --surface: #29292b;
+      --surface-soft: rgba(255, 255, 255, 0.035);
+      --surface-card: rgba(42, 42, 44, 0.7);
+      --border: rgba(255, 255, 255, 0.08);
+      --border-strong: rgba(255, 255, 255, 0.14);
+      --text: #f7f7f8;
+      --text-secondary: #c8c8cc;
+      --text-muted: #98989f;
+      --blue: #1e9bff;
+      --blue-soft: rgba(30, 155, 255, 0.18);
+      --green: #3bd36f;
+      --purple: #8f82f7;
+      --memory-short: #8b6cff;
+      --memory-long: #56c8f5;
+      --memory-permanent: #f6b51e;
+      --edge: #4b4c50;
+      --edge-active: #8f82f7;
+      --tree-zoom: 1;
+      --radius-card: 28px;
+      --shadow-card: 0 30px 80px -42px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: var(--bg);
+      color: var(--text);
+      -webkit-font-smoothing: antialiased;
+      text-rendering: optimizeLegibility;
+    }
+
+    button {
+      padding: 0;
+      border: 0;
+      font: inherit;
+      color: inherit;
+      background: transparent;
+      cursor: pointer;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    .tree-modal {
+      position: relative;
+      width: 100vw;
+      height: 100vh;
+      display: grid;
+      grid-template-rows: 52px minmax(0, 1fr);
+      overflow: hidden;
+      isolation: isolate;
+      background: var(--bg) url("assets/lumeow-chat-background.svg") center / cover no-repeat;
+    }
+
+    .tree-modal::before {
+      content: "";
+      position: absolute;
+      left: 50%;
+      top: 50%;
+      width: max(1168px, 100vw);
+      height: max(900px, 100vh);
+      transform: translate(-50%, -50%);
+      background: rgba(0, 0, 0, 0.85);
+      background-blend-mode: multiply;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .topbar {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 30px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.075);
+      color: var(--text-muted);
+    }
+
+    .close-button {
+      position: relative;
+      width: 22px;
+      height: 22px;
+      opacity: 0.82;
+    }
+
+    .close-button::before,
+    .close-button::after {
+      content: "";
+      position: absolute;
+      left: 10px;
+      top: 2px;
+      width: 1.5px;
+      height: 18px;
+      border-radius: 999px;
+      background: currentColor;
+    }
+
+    .close-button::before {
+      transform: rotate(45deg);
+    }
+
+    .close-button::after {
+      transform: rotate(-45deg);
+    }
+
+    .top-meta {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      letter-spacing: 0;
+      opacity: 0.42;
+      transition: opacity 160ms ease;
+    }
+
+    .top-meta:hover,
+    .top-meta:focus-within {
+      opacity: 0.9;
+    }
+
+    .zoom-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 4px;
+      border: 1px solid rgba(255, 255, 255, 0.055);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.018);
+      backdrop-filter: blur(14px);
+      -webkit-backdrop-filter: blur(14px);
+    }
+
+    .zoom-button,
+    .zoom-value {
+      height: 30px;
+      min-width: 30px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 999px;
+      color: rgba(247, 247, 248, 0.66);
+      font-size: 13px;
+      font-weight: 650;
+      line-height: 1;
+    }
+
+    .zoom-button {
+      border: 1px solid transparent;
+      background: transparent;
+      transition: background 160ms ease, color 160ms ease, opacity 160ms ease;
+    }
+
+    .zoom-button:hover {
+      color: var(--text);
+      background: rgba(255, 255, 255, 0.055);
+    }
+
+    .zoom-value {
+      min-width: 48px;
+      color: rgba(247, 247, 248, 0.7);
+      font-variant-numeric: tabular-nums;
+      pointer-events: none;
+    }
+
+    .legend {
+      display: inline-flex;
+      align-items: center;
+      gap: 14px;
+      color: var(--text-muted);
+      font-size: 12px;
+      line-height: 16px;
+    }
+
+    .legend span {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      white-space: nowrap;
+    }
+
+    .legend i {
+      width: 8px;
+      height: 8px;
+      border-radius: 999px;
+      background: var(--blue);
+      box-shadow: 0 0 16px rgba(30, 155, 255, 0.62);
+    }
+
+    .legend .memory i {
+      background: #8f8f95;
+      box-shadow: 0 0 14px rgba(255, 255, 255, 0.28);
+    }
+
+    .legend .current i {
+      background: var(--green);
+      box-shadow: 0 0 16px rgba(59, 211, 111, 0.54);
+    }
+
+    .graph-stage {
+      position: relative;
+      z-index: 1;
+      min-height: 0;
+      overflow: hidden;
+    }
+
+    .graph-viewport {
+      position: absolute;
+      inset: 0;
+      overflow: auto;
+      cursor: grab;
+      overscroll-behavior: contain;
+      scrollbar-width: none;
+      touch-action: none;
+    }
+
+    .graph-viewport::-webkit-scrollbar {
+      display: none;
+    }
+
+    .graph-viewport.is-panning {
+      cursor: grabbing;
+      user-select: none;
+    }
+
+    .graph-canvas {
+      position: relative;
+      width: 1200px;
+      min-width: 1200px;
+      height: 720px;
+      min-height: 650px;
+      margin: 28px auto 12px;
+    }
+
+    .graph-content {
+      position: absolute;
+      left: 0;
+      top: 0;
+      width: 1200px;
+      height: 720px;
+      transform: scale(var(--tree-zoom));
+      transform-origin: 0 0;
+      will-change: transform;
+    }
+
+    .edge-svg {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      overflow: visible;
+    }
+
+    .edge {
+      fill: none;
+      stroke: var(--edge);
+      stroke-width: 1.45;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 6 9;
+      opacity: 1;
+    }
+
+    .edge.active {
+      stroke: var(--edge-active);
+      stroke-width: 1.9;
+      stroke-dasharray: none;
+      opacity: 1;
+      filter: drop-shadow(0 0 8px rgba(143, 130, 247, 0.32));
+    }
+
+    .edge-flow {
+      fill: none;
+      stroke: rgba(193, 186, 255, 0.95);
+      stroke-width: 2.4;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-dasharray: 14 64;
+      opacity: 0.9;
+      animation: dash-flow 1.2s linear infinite;
+      filter: drop-shadow(0 0 8px rgba(143, 130, 247, 0.42));
+      pointer-events: none;
+    }
+
+    @keyframes dash-flow {
+      to {
+        stroke-dashoffset: -78;
+      }
+    }
+
+    .chat-node {
+      position: absolute;
+      left: calc(var(--x) * 1px);
+      top: calc(var(--y) * 1px);
+      width: 56px;
+      height: 56px;
+      transform: translate(-50%, -50%);
+      border: 2px solid rgba(143, 130, 247, 0.86);
+      border-radius: 999px;
+      background-color: rgba(46, 38, 96, 0.54);
+      background-clip: padding-box;
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+      overflow: hidden;
+      box-shadow: 0 0 0 1px rgba(143, 130, 247, 0.08), 0 0 15px rgba(143, 130, 247, 0.26);
+      transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease, filter 160ms ease;
+      z-index: 2;
+    }
+
+    .chat-node.user {
+      background-image: url("assets/lumeow-user-avatar.png");
+      background-position: center;
+      background-size: contain;
+    }
+
+    .chat-node.assistant {
+      background-image: url("assets/lumeow-cat-avatar.png");
+      background-position: center;
+      background-size: contain;
+    }
+
+    .chat-node:hover,
+    .chat-node:focus-visible {
+      outline: none;
+      transform: translate(-50%, -50%) scale(1.14);
+      border-color: rgba(173, 163, 255, 1);
+      box-shadow: 0 0 0 6px rgba(143, 130, 247, 0.13), 0 0 26px rgba(143, 130, 247, 0.52);
+      z-index: 4;
+    }
+
+    .chat-node.inactive {
+      border-color: rgba(90, 101, 111, 0.8);
+      box-shadow: none;
+      filter: none;
+      opacity: 0.2;
+    }
+
+    .chat-node.memory {
+      border-color: rgba(164, 176, 187, 0.82);
+    }
+
+    .chat-node.memory-short {
+      box-shadow: 0 0 13px rgba(139, 108, 255, 0.33);
+    }
+
+    .chat-node.memory-long {
+      box-shadow: 0 0 13px rgba(86, 200, 245, 0.28);
+    }
+
+    .chat-node.memory-permanent {
+      box-shadow: 0 0 13px rgba(246, 181, 30, 0.3);
+    }
+
+    .chat-node.current {
+      border-color: rgba(83, 226, 127, 1);
+      filter: none;
+      opacity: 1;
+      box-shadow: 0 0 0 6px rgba(59, 211, 111, 0.12), 0 0 28px rgba(59, 211, 111, 0.52);
+      z-index: 5;
+    }
+
+    .chat-node.selected {
+      border-color: rgba(143, 130, 247, 1);
+      box-shadow: 0 0 0 6px rgba(143, 130, 247, 0.12), 0 0 26px rgba(143, 130, 247, 0.5);
+      z-index: 6;
+    }
+
+    .path-panel {
+      position: absolute;
+      left: 24px;
+      top: 24px;
+      bottom: 24px;
+      z-index: 8;
+      width: 340px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 26px;
+      background: rgba(22, 22, 25, 0.66);
+      box-shadow: 0 34px 100px -48px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(143, 130, 247, 0.06) inset;
+      backdrop-filter: blur(40px);
+      -webkit-backdrop-filter: blur(40px);
+    }
+
+    .path-panel::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      background:
+        linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0) 34%),
+        radial-gradient(circle at 22% 0%, rgba(143, 130, 247, 0.12), transparent 32%);
+      pointer-events: none;
+    }
+
+    .path-panel__header,
+    .path-thread {
+      position: relative;
+      z-index: 1;
+    }
+
+    .path-panel__header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 12px;
+      padding: 18px 18px 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+    }
+
+    .path-panel__eyebrow {
+      margin: 0 0 5px;
+      color: rgba(232, 232, 235, 0.5);
+      font-size: 11px;
+      font-weight: 650;
+      line-height: 1;
+    }
+
+    .path-panel__title {
+      margin: 0;
+      color: rgba(255, 255, 255, 0.95);
+      font-size: 18px;
+      font-weight: 760;
+      line-height: 1.2;
+    }
+
+    .path-panel__count {
+      flex: none;
+      margin-top: 1px;
+      padding: 6px 10px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 999px;
+      color: rgba(232, 232, 235, 0.72);
+      background: rgba(255, 255, 255, 0.035);
+      font-size: 12px;
+      font-weight: 700;
+      line-height: 1;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .path-thread {
+      flex: 1;
+      min-height: 0;
+      overflow-y: auto;
+      padding: 10px 12px 16px;
+      scrollbar-width: none;
+    }
+
+    .path-thread::-webkit-scrollbar {
+      display: none;
+    }
+
+    .path-message {
+      position: relative;
+      display: grid;
+      grid-template-columns: 32px minmax(0, 1fr);
+      gap: 10px;
+      padding: 10px 8px 12px;
+      border-radius: 18px;
+    }
+
+    .path-message::before {
+      content: "";
+      position: absolute;
+      left: 24px;
+      top: 48px;
+      bottom: -4px;
+      width: 1px;
+      border-radius: 999px;
+      background: linear-gradient(180deg, rgba(143, 130, 247, 0.32), rgba(255, 255, 255, 0.06));
+    }
+
+    .path-message:last-child::before {
+      display: none;
+    }
+
+    .path-message.current {
+      border: 1px solid rgba(143, 130, 247, 0.16);
+      background: rgba(39, 38, 52, 0.96);
+      box-shadow: 0 16px 44px -34px rgba(143, 130, 247, 0.7);
+    }
+
+    .path-message.current::before {
+      display: none;
+    }
+
+    .path-avatar {
+      position: relative;
+      z-index: 1;
+      width: 32px;
+      height: 32px;
+      border: 1px solid rgba(255, 255, 255, 0.12);
+      border-radius: 999px;
+      background-color: rgba(46, 38, 96, 0.5);
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+    }
+
+    .path-avatar.user {
+      background-image: url("assets/lumeow-user-avatar.png");
+    }
+
+    .path-avatar.assistant {
+      background-image: url("assets/lumeow-cat-avatar.png");
+    }
+
+    .path-message.current .path-avatar {
+      border-color: rgba(143, 130, 247, 0.9);
+      box-shadow: 0 0 0 3px rgba(143, 130, 247, 0.12), 0 0 18px rgba(143, 130, 247, 0.36);
+    }
+
+    .path-message__meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+      margin-bottom: 5px;
+    }
+
+    .path-message__speaker {
+      flex: none;
+      color: rgba(255, 255, 255, 0.92);
+      font-size: 13px;
+      font-weight: 760;
+      line-height: 1.25;
+      white-space: nowrap;
+    }
+
+    .path-message__text {
+      margin: 0;
+      color: rgba(232, 232, 235, 0.76);
+      font-size: 13px;
+      line-height: 1.58;
+      word-break: break-word;
+    }
+
+    .tooltip {
+      position: fixed;
+      left: 0;
+      top: 0;
+      z-index: 60;
+      display: flex;
+      align-items: flex-start;
+      gap: 12px;
+      width: max-content;
+      max-width: min(420px, calc(100vw - 24px));
+      padding: 18px;
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 18px;
+      background: rgba(22, 22, 25, 0.88);
+      box-shadow: 0 24px 80px -36px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(143, 130, 247, 0.08) inset;
+      backdrop-filter: blur(28px);
+      -webkit-backdrop-filter: blur(28px);
+      opacity: 0;
+      transform: translateY(4px);
+      pointer-events: none;
+      transition: opacity 130ms ease, transform 130ms ease;
+    }
+
+    .tooltip.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    .tooltip__avatar {
+      flex: none;
+      width: 32px;
+      height: 32px;
+      border-radius: 999px;
+      background-color: rgba(46, 38, 96, 0.5);
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.12) inset;
+    }
+
+    .tooltip__avatar.user {
+      background-image: url("assets/lumeow-user-avatar.png");
+    }
+
+    .tooltip__avatar.assistant {
+      background-image: url("assets/lumeow-cat-avatar.png");
+    }
+
+    .tooltip__content {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 320px;
+      min-width: 0;
+      word-break: break-word;
+    }
+
+    .tooltip__label {
+      color: #ffffff;
+      font-size: 20px;
+      font-weight: 700;
+      line-height: 1.2;
+    }
+
+    .tooltip__body {
+      color: rgba(232, 232, 235, 0.78);
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+
+    .tooltip__arrow {
+      position: absolute;
+      width: 12px;
+      height: 12px;
+      background: rgba(22, 22, 25, 0.88);
+      border-right: 1px solid rgba(255, 255, 255, 0.08);
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      transform: rotate(45deg);
+    }
+
+    .toast {
+      position: fixed;
+      right: 28px;
+      top: 68px;
+      max-width: 360px;
+      padding: 12px 14px;
+      border: 1px solid rgba(30, 155, 255, 0.2);
+      border-radius: 14px;
+      color: var(--text-secondary);
+      background: rgba(32, 32, 34, 0.92);
+      box-shadow: 0 20px 60px -30px rgba(0, 0, 0, 0.9);
+      opacity: 0;
+      transform: translateY(-8px);
+      pointer-events: none;
+      transition: opacity 180ms ease, transform 180ms ease;
+      font-size: 12px;
+      line-height: 1.55;
+    }
+
+    .toast.show {
+      opacity: 1;
+      transform: translateY(0);
+    }
+
+    @media (max-width: 900px) {
+      .tree-modal {
+        grid-template-rows: 46px minmax(0, 1fr);
+      }
+
+      .topbar {
+        padding: 0 12px 0 16px;
+      }
+
+      .legend {
+        display: none;
+      }
+
+      .top-meta {
+        opacity: 0.34;
+      }
+
+      .zoom-controls {
+        gap: 1px;
+        padding: 3px;
+      }
+
+      .zoom-button,
+      .zoom-value {
+        height: 26px;
+        min-width: 26px;
+        font-size: 11px;
+      }
+
+      .zoom-value {
+        min-width: 40px;
+      }
+
+      .graph-canvas {
+        min-width: 0;
+        min-height: 0;
+        margin: 16px 14px 20px;
+      }
+
+      .edge-svg {
+        width: 100%;
+        height: 100%;
+      }
+
+      .chat-node {
+        width: 52px;
+        height: 52px;
+      }
+
+      .path-panel {
+        left: 12px;
+        top: 12px;
+        bottom: auto;
+        width: min(320px, calc(100vw - 24px));
+        max-height: min(390px, 48vh);
+        border-radius: 22px;
+      }
+
+      .path-panel__header {
+        padding: 14px 14px 11px;
+      }
+
+      .path-panel__title {
+        font-size: 16px;
+      }
+
+      .path-thread {
+        padding: 8px 10px 12px;
+      }
+
+      .path-message {
+        grid-template-columns: 28px minmax(0, 1fr);
+        gap: 9px;
+        padding: 8px 7px 10px;
+      }
+
+      .path-message::before {
+        left: 21px;
+        top: 42px;
+        bottom: -2px;
+      }
+
+      .path-avatar {
+        width: 28px;
+        height: 28px;
+      }
+
+      .path-message__speaker,
+      .path-message__text {
+        font-size: 12px;
+      }
+
+    }
+
+    @media (max-width: 480px) {
+      .tree-modal {
+        grid-template-rows: 44px minmax(0, 1fr);
+      }
+
+      .zoom-value {
+        min-width: 34px;
+      }
+
+      .zoom-button:last-child {
+        display: none;
+      }
+
+      .path-panel {
+        top: auto;
+        left: 10px;
+        right: 10px;
+        bottom: 10px;
+        width: auto;
+        max-height: 36vh;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="tree-modal" aria-label="Lumeow 聊天树分支地图 Demo">
+    <header class="topbar">
+      <button class="close-button" type="button" aria-label="关闭聊天树"></button>
+      <div class="top-meta" aria-label="缩放控制">
+        <div class="zoom-controls">
+          <button class="zoom-button" type="button" id="zoomOutBtn" aria-label="缩小">−</button>
+          <span class="zoom-value" id="zoomValue">100%</span>
+          <button class="zoom-button" type="button" id="zoomInBtn" aria-label="放大">+</button>
+          <button class="zoom-button" type="button" id="zoomResetBtn" aria-label="重置缩放">1:1</button>
+        </div>
+      </div>
+    </header>
+
+    <section class="graph-stage" aria-label="聊天树地图">
+      <div class="graph-viewport" id="graphViewport">
+        <div class="graph-canvas" id="graphCanvas">
+          <div class="graph-content" id="graphContent">
+            <svg class="edge-svg" id="edgeSvg" viewBox="0 0 1200 720" aria-hidden="true"></svg>
+            <div id="nodeLayer"></div>
+          </div>
+        </div>
+      </div>
+      <aside class="path-panel" aria-label="当前选中路径的完整会话上下文">
+        <header class="path-panel__header">
+          <div>
+            <p class="path-panel__eyebrow">当前选中路径</p>
+            <h2 class="path-panel__title">会话上下文</h2>
+          </div>
+          <span class="path-panel__count" id="pathCount">0 条</span>
+        </header>
+        <div class="path-thread" id="pathThread"></div>
+      </aside>
+    </section>
+  </main>
+  <div class="tooltip" id="tooltip" role="tooltip" aria-hidden="true">
+    <span class="tooltip__avatar" id="tooltipAvatar"></span>
+    <span class="tooltip__content">
+      <span class="tooltip__label" id="tooltipLabel"></span>
+      <span class="tooltip__body" id="tooltipBody"></span>
+    </span>
+    <i class="tooltip__arrow" id="tooltipArrow"></i>
+  </div>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <script>
+    const nodes = {
+      root: { id: "root", parent: null, x: 600, y: 58, type: "assistant", title: "The Maze", text: "Anon has entered the maze. The opening in the hedges that they had come in through closes and knits together behind them until it's impossible to tell where the opening had been, and it's clear that there's no way back out. There is a path going forward, a path going to the left, and a path going to the right. Which path will they take?", memory: "permanent" },
+      l1: { id: "l1", parent: "root", x: 440, y: 104, type: "user", title: "Left Path", text: "Anon chooses the left path. The hedge walls lean inward, soft leaves brushing their sleeves while the sound of the entrance disappears behind them." },
+      l2: { id: "l2", parent: "l1", x: 440, y: 150, type: "assistant", title: "A Split In The Leaves", text: "The path divides again. One track is narrow and dark. The other bends toward a pale blue light." },
+      l3a: { id: "l3a", parent: "l2", x: 340, y: 196, type: "user", title: "Narrow Track", text: "Anon takes the narrow track and keeps one hand on the hedge wall." },
+      l4a: { id: "l4a", parent: "l3a", x: 340, y: 242, type: "assistant", title: "Cat Prints", text: "Small pawprints appear in the dirt, too neat to be random. They lead deeper into the maze.", memory: "short" },
+      l5a: { id: "l5a", parent: "l4a", x: 280, y: 290, type: "user", title: "Follow Prints", text: "Anon follows the pawprints, careful not to step on them." },
+      l6a: { id: "l6a", parent: "l5a", x: 280, y: 336, type: "assistant", title: "Silver Tail", text: "A silver tail slips around a corner. The cat is close, but still testing whether Anon will rush." },
+      l7a: { id: "l7a", parent: "l6a", x: 235, y: 382, type: "user", title: "Wait", text: "Anon waits at the corner and lets the cat decide." },
+      l8a: { id: "l8a", parent: "l7a", x: 235, y: 428, type: "assistant", title: "Permission", text: "The cat returns and blinks once. It is not friendship yet, but it is permission." },
+      l7b: { id: "l7b", parent: "l6a", x: 305, y: 382, type: "user", title: "Call", text: "Anon calls softly into the hedge corridor." },
+      l8b: { id: "l8b", parent: "l7b", x: 305, y: 428, type: "assistant", title: "Gone Quiet", text: "The tail vanishes. A choice made too loudly closes this branch for now.", memory: "long" },
+      l5b: { id: "l5b", parent: "l4a", x: 385, y: 290, type: "user", title: "Ignore Prints", text: "Anon ignores the pawprints and keeps walking." },
+      l6b: { id: "l6b", parent: "l5b", x: 385, y: 336, type: "assistant", title: "Empty Fountain", text: "They reach an empty fountain where the water remembers the moon but not the sky." },
+      l7c: { id: "l7c", parent: "l6b", x: 385, y: 382, type: "user", title: "Look In", text: "Anon looks into the dry basin." },
+      l8c: { id: "l8c", parent: "l7c", x: 385, y: 428, type: "assistant", title: "Reflection", text: "The reflection arrives before the water does. It shows a version of Anon who chose differently." },
+      l3b: { id: "l3b", parent: "l2", x: 520, y: 196, type: "user", title: "Blue Light", text: "Anon chooses the path with pale blue light." },
+      l4b: { id: "l4b", parent: "l3b", x: 520, y: 242, type: "assistant", title: "Lantern Moss", text: "The hedges glow with lantern moss. Every step makes the light pulse as if the maze has a heartbeat.", memory: "short" },
+      l5c: { id: "l5c", parent: "l4b", x: 475, y: 290, type: "user", title: "Touch Moss", text: "Anon touches the moss." },
+      l6c: { id: "l6c", parent: "l5c", x: 475, y: 336, type: "assistant", title: "Shared Warmth", text: "Warmth flows into their fingers. Somewhere else in the maze, a locked gate loosens." },
+      l5d: { id: "l5d", parent: "l4b", x: 565, y: 290, type: "user", title: "Keep Distance", text: "Anon keeps their hands to themself." },
+      l6d: { id: "l6d", parent: "l5d", x: 565, y: 336, type: "assistant", title: "The Light Fades", text: "The moss dims politely, withholding whatever answer it might have given." },
+      m1: { id: "m1", parent: "root", x: 600, y: 104, type: "assistant", title: "Forward", text: "Anon chooses the forward path. The maze straightens into a corridor so long it seems to have been waiting for exactly this decision.", memory: "permanent" },
+      m2: { id: "m2", parent: "m1", x: 600, y: 150, type: "user", title: "Keep Walking", text: "Anon keeps walking forward without looking back." },
+      m3: { id: "m3", parent: "m2", x: 600, y: 196, type: "assistant", title: "Three Doors", text: "Three small doors appear at knee height. One is scratched, one is warm, and one is perfectly silent.", memory: "short" },
+      m4a: { id: "m4a", parent: "m3", x: 555, y: 242, type: "user", title: "Scratched Door", text: "Anon opens the scratched door." },
+      m5a: { id: "m5a", parent: "m4a", x: 555, y: 288, type: "assistant", title: "Claw Marks", text: "Behind it is a wall of claw marks, all pointing upward." },
+      m4b: { id: "m4b", parent: "m3", x: 600, y: 242, type: "user", title: "Warm Door", text: "Anon opens the warm door." },
+      m5b: { id: "m5b", parent: "m4b", x: 600, y: 288, type: "assistant", title: "Sleeping Room", text: "A room full of sleeping cats breathes in unison. Waking them would be easy. Leaving them safe would be kinder.", memory: "long" },
+      m6b1: { id: "m6b1", parent: "m5b", x: 560, y: 334, type: "user", title: "Leave Quietly", text: "Anon backs out without making a sound." },
+      m6b2: { id: "m6b2", parent: "m5b", x: 600, y: 334, type: "user", title: "Pet One", text: "Anon reaches toward the nearest sleeping cat." },
+      m6b3: { id: "m6b3", parent: "m5b", x: 640, y: 334, type: "user", title: "Count Them", text: "Anon counts the sleeping cats and notices one place is empty." },
+      m7b2: { id: "m7b2", parent: "m6b2", x: 600, y: 380, type: "assistant", title: "A Warning Purr", text: "The cat purrs once, not in comfort but in warning. The maze has rules about sleeping things.", memory: "short" },
+      m8b2: { id: "m8b2", parent: "m7b2", x: 600, y: 426, type: "user", title: "Apologize", text: "Anon whispers an apology and pulls their hand back." },
+      m9b2: { id: "m9b2", parent: "m8b2", x: 600, y: 472, type: "assistant", title: "Forgiven", text: "The cat opens one eye. The empty place in the room fills with a folded map." },
+      m4c: { id: "m4c", parent: "m3", x: 645, y: 242, type: "user", title: "Silent Door", text: "Anon opens the silent door." },
+      m5c: { id: "m5c", parent: "m4c", x: 645, y: 288, type: "assistant", title: "No Handle Inside", text: "The door shuts behind them. Silence becomes a room with no handle." },
+      r1: { id: "r1", parent: "root", x: 760, y: 104, type: "user", title: "Right Path", text: "Anon chooses the right path. It smells of wet stone and green stems cut open by rain." },
+      r2: { id: "r2", parent: "r1", x: 760, y: 150, type: "assistant", title: "Old Marker", text: "A stone marker bears a symbol like a curled tail. Moss has grown around it, but not over it.", memory: "short" },
+      r3: { id: "r3", parent: "r2", x: 760, y: 196, type: "user", title: "Read Marker", text: "Anon kneels and reads the marker." },
+      r4: { id: "r4", parent: "r3", x: 760, y: 242, type: "assistant", title: "Branching Vow", text: "The marker says: every path remembers the kindness shown inside it.", memory: "permanent" },
+      r5a: { id: "r5a", parent: "r4", x: 695, y: 288, type: "user", title: "Promise", text: "Anon promises to move gently." },
+      r6a: { id: "r6a", parent: "r5a", x: 650, y: 334, type: "assistant", title: "Gate Opens", text: "A gate of thorns opens just enough for one careful person." },
+      r6b: { id: "r6b", parent: "r5a", x: 695, y: 334, type: "assistant", title: "Second Gate", text: "Another gate opens beside it, narrower and brighter." },
+      r6c: { id: "r6c", parent: "r5a", x: 740, y: 334, type: "assistant", title: "Third Gate", text: "A third gate stays shut, but a silver paw reaches through." },
+      r7c: { id: "r7c", parent: "r6c", x: 740, y: 380, type: "user", title: "Take Paw", text: "Anon offers a finger to the paw." },
+      r8c: { id: "r8c", parent: "r7c", x: 740, y: 426, type: "assistant", title: "Chosen", text: "The paw squeezes once. This path is now awake." },
+      r5b: { id: "r5b", parent: "r4", x: 850, y: 288, type: "user", title: "Ignore", text: "Anon ignores the marker." },
+      r6d: { id: "r6d", parent: "r5b", x: 850, y: 334, type: "assistant", title: "Hedge Tightens", text: "The hedge tightens into a corridor that only permits forward motion." },
+      r7d: { id: "r7d", parent: "r6d", x: 805, y: 380, type: "user", title: "Push", text: "Anon pushes onward." },
+      r8d: { id: "r8d", parent: "r7d", x: 805, y: 426, type: "assistant", title: "Scrapes", text: "The leaves scrape at their sleeves, taking tiny threads as payment." },
+      r7e: { id: "r7e", parent: "r6d", x: 895, y: 380, type: "user", title: "Stop", text: "Anon stops walking and waits." },
+      r8e1: { id: "r8e1", parent: "r7e", x: 875, y: 426, type: "assistant", title: "Return Of Sound", text: "Sound returns first: rain, paws, breathing." },
+      r8e2: { id: "r8e2", parent: "r7e", x: 915, y: 426, type: "assistant", title: "Hidden Turn", text: "A hidden turn opens where the hedge had looked solid." },
+      r9e2: { id: "r9e2", parent: "r8e2", x: 915, y: 472, type: "user", title: "Turn", text: "Anon takes the hidden turn." }
+    };
+
+    const localizedMessages = {
+      root: { title: "迷宫入口", text: "你闻到猫薄荷和雨水的味道。露喵蹲在树篱门口，尾巴轻轻一甩：进去以后，每一次选择都会长出新的分支。你要先往哪边走？" },
+      l1: { title: "向左", text: "我想先走左边，那里好像更安静。" },
+      l2: { title: "左侧岔路", text: "左边的小径收紧了树叶，露喵压低声音说：这里有两条路，一条黑，一条亮。" },
+      l3a: { title: "窄路", text: "我走那条窄一点的路，手贴着树篱慢慢往前。" },
+      l4a: { title: "爪印", text: "泥土里出现一串很整齐的小爪印。露喵看了一眼，说：它们不是随便留下的。" },
+      l5a: { title: "跟着爪印", text: "那我跟着爪印走，小心不要踩乱它。" },
+      l6a: { title: "银色尾巴", text: "一截银色尾巴从拐角滑过去。露喵小声说：别急，它在看你会不会追太快。" },
+      l7a: { title: "等待", text: "我停在拐角，等它自己决定要不要出来。" },
+      l8a: { title: "允许靠近", text: "那只猫回来，对你慢慢眨了一下眼。露喵说：这还不是亲近，但已经是允许。" },
+      l7b: { title: "呼唤", text: "我试着轻轻叫它，声音应该不算大。" },
+      l8b: { title: "安静下来", text: "尾巴消失了。露喵叹气：有些分支，一旦太用力，就会先合上。" },
+      l5b: { title: "忽略爪印", text: "我不跟爪印走，继续沿着原路往前。" },
+      l6b: { title: "空喷泉", text: "你们来到一座没有水的喷泉前。露喵跳上边缘，低头看着盆底：这里记得月亮，但不记得天空。" },
+      l7c: { title: "看进去", text: "我低头看看喷泉里面到底有什么。" },
+      l8c: { title: "倒影", text: "水还没出现，倒影先到了。里面的你走着另一条路，怀里抱着一只熟睡的猫。" },
+      l3b: { title: "蓝光", text: "我选那条有蓝光的路。" },
+      l4b: { title: "灯苔", text: "树篱上长着会发光的苔藓。你每走一步，蓝光就像呼吸一样亮一下。" },
+      l5c: { title: "触碰苔藓", text: "我伸手摸一下发光的苔藓。" },
+      l6c: { title: "共享的暖意", text: "暖意顺着指尖流进来。露喵耳朵一动：远处有一扇门，因为你这个动作松开了。" },
+      l5d: { title: "保持距离", text: "我不碰它，先观察一下。" },
+      l6d: { title: "光暗下去", text: "苔藓礼貌地暗了一点，像是把答案收回去了。" },
+      m1: { title: "正前方", text: "露喵跟着你往前走，通道忽然变直，像是在等你做出这个决定。" },
+      m2: { title: "继续前进", text: "我不回头，继续往前。" },
+      m3: { title: "三扇小门", text: "你们面前出现三扇只到膝盖高的小门：一扇有抓痕，一扇暖烘烘，一扇安静得过分。" },
+      m4a: { title: "抓痕门", text: "我打开那扇有抓痕的小门。" },
+      m5a: { title: "抓痕墙", text: "门后是一整面抓痕，全部往上指。露喵抬头：看来有人从这里爬出去过。" },
+      m4b: { title: "暖门", text: "我打开那扇暖烘烘的小门。" },
+      m5b: { title: "睡猫房", text: "门后是一间铺着软毯的房间，许多猫睡得很沉。露喵看着你：要叫醒它们吗？" },
+      m6b1: { title: "安静离开", text: "我轻轻退出来，不发出声音。" },
+      m6b2: { title: "摸一只", text: "我只轻轻摸最近那只的脑袋，不吵醒它。" },
+      m6b3: { title: "数一数", text: "我先数一数这里有几只猫，好像少了一个位置。" },
+      m7b2: { title: "提醒的呼噜", text: "那只猫发出一声很低的呼噜，不像撒娇，倒像提醒：迷宫对睡着的东西有规矩。" },
+      m8b2: { title: "道歉", text: "对不起，我收回手，让它继续睡。" },
+      m9b2: { title: "被原谅", text: "露喵眨了眨眼。空出来的睡垫上，慢慢浮出一张折好的地图。" },
+      m4c: { title: "静门", text: "我打开那扇最安静的门。" },
+      m5c: { title: "没有门把手", text: "门在身后合上。房间里面没有门把手，安静变成了墙。" },
+      r1: { title: "向右", text: "我走右边，那边闻起来像雨后的石头。" },
+      r2: { title: "旧路标", text: "一块石头路标上刻着卷起来的尾巴，苔藓绕着它长，却没有盖住它。" },
+      r3: { title: "读路标", text: "我蹲下来读上面的字。" },
+      r4: { title: "分支誓言", text: "露喵替你念出来：每条路都会记得你在里面怎样对待小东西。" },
+      r5a: { title: "承诺", text: "那我承诺，接下来动作轻一点。" },
+      r6a: { title: "第一道门", text: "荆棘门向旁边让开一点，只够一个认真小心的人通过。" },
+      r6b: { title: "第二道门", text: "旁边又开了一道更窄的门，里面有一点亮光。" },
+      r6c: { title: "第三道门", text: "第三道门仍然关着，但有一只银色小爪从缝里伸出来。" },
+      r7c: { title: "握住爪子", text: "我伸出一根手指，让它自己碰过来。" },
+      r8c: { title: "被选中", text: "小爪轻轻捏了你一下。露喵说：好，这条路醒了。" },
+      r5b: { title: "忽略路标", text: "我不管路标，继续往前走。" },
+      r6d: { title: "树篱收紧", text: "树篱变成只允许向前的走廊。露喵没有阻止你，只是跟得更近。" },
+      r7d: { title: "硬闯", text: "我继续往前挤过去。" },
+      r8d: { title: "被刮到", text: "叶子刮过袖口，留下几根细线。迷宫收走了小小的代价。" },
+      r7e: { title: "停下", text: "我停下来，不继续硬闯。" },
+      r8e1: { title: "声音回来", text: "声音先回来了：雨声、脚步声，还有很轻的呼吸声。" },
+      r8e2: { title: "隐藏转角", text: "原本完整的树篱上露出一个转角，像是一直在那里等你发现。" },
+      r9e2: { title: "转过去", text: "我走进那个隐藏的转角。" }
+    };
+
+    Object.entries(localizedMessages).forEach(([id, message]) => {
+      Object.assign(nodes[id], message);
+    });
+
+    // Fixed spine used ONLY for layout (keeps the centre line straight and the
+    // node positions stable). It never changes, so clicking a node only updates
+    // highlighting — no node ever shifts position.
+    const layoutSpineLeafId = "m9b2";
+    let activeLeafId = "m9b2";
+    let selectedNodeId = "root";
+    let layout = { positions: {}, width: 1200, height: 720 };
+    let treeZoom = 1;
+    let initialZoomApplied = false;
+    let userChangedZoom = false;
+    let panGesture = null;
+    const graphCanvas = document.getElementById("graphCanvas");
+    const graphContent = document.getElementById("graphContent");
+    const nodeLayer = document.getElementById("nodeLayer");
+    const edgeSvg = document.getElementById("edgeSvg");
+    const viewport = document.getElementById("graphViewport");
+    const tooltip = document.getElementById("tooltip");
+    const tooltipAvatar = document.getElementById("tooltipAvatar");
+    const tooltipLabel = document.getElementById("tooltipLabel");
+    const tooltipBody = document.getElementById("tooltipBody");
+    const tooltipArrow = document.getElementById("tooltipArrow");
+    const toast = document.getElementById("toast");
+    const zoomValue = document.getElementById("zoomValue");
+    const pathThread = document.getElementById("pathThread");
+    const pathCount = document.getElementById("pathCount");
+
+    function childrenOf(id) {
+      return Object.values(nodes).filter((node) => node.parent === id);
+    }
+
+    function pathToRoot(id) {
+      const path = [];
+      let node = nodes[id];
+      while (node) {
+        path.unshift(node.id);
+        node = node.parent ? nodes[node.parent] : null;
+      }
+      return path;
+    }
+
+    function activePath() {
+      return pathToRoot(activeLeafId);
+    }
+
+    function selectedPath() {
+      return pathToRoot(selectedNodeId);
+    }
+
+    function isOnActivePath(id) {
+      return activePath().includes(id);
+    }
+
+    function activeMemories() {
+      return activePath().map((id) => nodes[id]).filter((node) => node.memory);
+    }
+
+    function computeLayout() {
+      const levelSpacing = 118;
+      const marginX = 96;
+      const marginTop = 76;
+      const marginBottom = 96;
+      const positions = {};
+      let maxDepth = 0;
+
+      const depthOf = (id) => pathToRoot(id).length - 1;
+
+      // Depth-aware minimum separation: the three mega-branches at the top are
+      // pushed far apart, tapering down to a comfortable gap between leaf-level
+      // siblings. The avatar is 56px, so even the smallest value clears it.
+      function sepFor(depth) {
+        if (depth <= 0) return 236; // between the L / M / R mega-branches
+        if (depth === 1) return 162;
+        if (depth === 2) return 124;
+        if (depth === 3) return 108;
+        return 100; // small / leaf-level sibling branches
+      }
+
+      // Nodes on the fixed layout spine. Using a constant path (not the dynamic
+      // active path) makes positions independent of selection, so clicking a
+      // node never shifts the layout.
+      const activeSet = new Set(pathToRoot(layoutSpineLeafId));
+
+      // Tidy-tree layout via contour merging. Each subtree is laid out on its
+      // own, then adjacent sibling subtrees are pushed apart by the minimum
+      // amount needed so their facing contours never get closer than `sep` at
+      // ANY depth -> avatar overlap is structurally impossible.
+      // For nodes on the active path we anchor the node above its active child
+      // (instead of the children's centroid), so the whole spine stays a
+      // perfectly straight vertical line.
+      function layoutSubtree(id, depth) {
+        maxDepth = Math.max(maxDepth, depth);
+        const childNodes = childrenOf(id);
+        if (!childNodes.length) {
+          return { rootX: 0, x: { [id]: 0 }, left: [0], right: [0] };
+        }
+
+        const sep = sepFor(depth);
+        const subs = childNodes.map((child) => layoutSubtree(child.id, depth + 1));
+        const offsets = [];
+        let accumRight = null;
+
+        subs.forEach((sub, index) => {
+          if (index === 0) {
+            offsets.push(0);
+            accumRight = sub.right.slice();
+            return;
+          }
+          let need = accumRight[0] + sep - sub.left[0];
+          const shared = Math.min(accumRight.length, sub.left.length);
+          for (let d = 0; d < shared; d += 1) {
+            need = Math.max(need, accumRight[d] + sep - sub.left[d]);
+          }
+          offsets.push(need);
+          for (let d = 0; d < sub.right.length; d += 1) {
+            const value = sub.right[d] + need;
+            if (d < accumRight.length) accumRight[d] = value;
+            else accumRight.push(value);
+          }
+        });
+
+        const childRootXs = subs.map((sub, index) => sub.rootX + offsets[index]);
+        const spineIndex = activeSet.has(id)
+          ? childNodes.findIndex((child) => activeSet.has(child.id))
+          : -1;
+        const rootX = spineIndex >= 0
+          ? childRootXs[spineIndex]
+          : (childRootXs[0] + childRootXs[childRootXs.length - 1]) / 2;
+
+        const x = { [id]: rootX };
+        const left = [];
+        const right = [];
+        subs.forEach((sub, index) => {
+          const offset = offsets[index];
+          Object.keys(sub.x).forEach((key) => {
+            x[key] = sub.x[key] + offset;
+          });
+          for (let d = 0; d < sub.left.length; d += 1) {
+            const lv = sub.left[d] + offset;
+            const rv = sub.right[d] + offset;
+            if (d >= left.length) {
+              left[d] = lv;
+              right[d] = rv;
+            } else {
+              left[d] = Math.min(left[d], lv);
+              right[d] = Math.max(right[d], rv);
+            }
+          }
+        });
+
+        return { rootX, x, left: [rootX, ...left], right: [rootX, ...right] };
+      }
+
+      const tree = layoutSubtree("root", 0);
+      Object.keys(tree.x).forEach((id) => {
+        positions[id] = {
+          x: tree.x[id],
+          y: marginTop + depthOf(id) * levelSpacing
+        };
+      });
+
+      const minX = Math.min(...Object.values(positions).map((position) => position.x));
+      const maxX = Math.max(...Object.values(positions).map((position) => position.x));
+      const offsetX = Math.max(0, marginX - minX);
+      if (offsetX) {
+        Object.values(positions).forEach((position) => {
+          position.x += offsetX;
+        });
+      }
+      const shiftedMaxX = maxX + offsetX;
+      const width = Math.max(1200, shiftedMaxX + marginX);
+      const height = Math.max(650, marginTop + maxDepth * levelSpacing + marginBottom);
+      if (!initialZoomApplied && viewport.clientWidth <= 760) {
+        treeZoom = clamp((viewport.clientWidth - 28) / width, 0.62, 0.76);
+        initialZoomApplied = true;
+      } else if (!initialZoomApplied) {
+        initialZoomApplied = true;
+      }
+      const paddingX = Math.max(viewport.clientWidth * 0.55, 320);
+      const paddingY = Math.max(viewport.clientHeight * 0.55, 260);
+      layout = { positions, width, height, paddingX, paddingY };
+      graphCanvas.style.width = `${Math.ceil(width * treeZoom + paddingX * 2)}px`;
+      graphCanvas.style.height = `${Math.ceil(height * treeZoom + paddingY * 2)}px`;
+      graphContent.style.left = `${paddingX}px`;
+      graphContent.style.top = `${paddingY}px`;
+      graphContent.style.width = `${width}px`;
+      graphContent.style.height = `${height}px`;
+      graphContent.style.setProperty("--tree-zoom", String(treeZoom));
+      edgeSvg.setAttribute("viewBox", `0 0 ${width} ${height}`);
+    }
+
+    function nodePosition(id) {
+      return layout.positions[id] || { x: nodes[id].x || 0, y: nodes[id].y || 0 };
+    }
+
+    function edgePathBetween(parentPos, childPos, avatarClearance) {
+      const startX = parentPos.x;
+      const startY = parentPos.y + avatarClearance;
+      const endX = childPos.x;
+      const endY = childPos.y - avatarClearance;
+      const dx = endX - startX;
+      const dy = Math.max(1, endY - startY);
+
+      if (Math.abs(dx) < 0.5) {
+        return `M ${startX} ${startY} L ${endX} ${endY}`;
+      }
+
+      const handleY = clamp(dy * 0.58, 36, 84);
+      const handleX = Math.abs(dx) * 0.24 * Math.sign(dx);
+      const cp1X = startX + handleX;
+      const cp2X = endX - handleX;
+      const cp1Y = startY + handleY;
+      const cp2Y = endY - handleY;
+
+      return `M ${startX} ${startY} C ${cp1X} ${cp1Y}, ${cp2X} ${cp2Y}, ${endX} ${endY}`;
+    }
+
+    function renderEdges() {
+      const avatarClearance = 34;
+      const activeIds = activePath();
+      const activePairs = new Set(activeIds.slice(1).map((id, index) => `${activeIds[index]}->${id}`));
+      const inactivePaths = [];
+      const activePaths = [];
+
+      Object.values(nodes).forEach((parent) => {
+        const childNodes = childrenOf(parent.id);
+        if (!childNodes.length) return;
+
+        const parentPos = nodePosition(parent.id);
+        childNodes.forEach((child) => {
+          const childPos = nodePosition(child.id);
+          const path = edgePathBetween(parentPos, childPos, avatarClearance);
+          const active = activePairs.has(`${parent.id}->${child.id}`);
+          (active ? activePaths : inactivePaths).push(path);
+        });
+      });
+
+      const inactivePath = inactivePaths.join(" ");
+      const activePathD = activePaths.join(" ");
+      edgeSvg.innerHTML = [
+        inactivePath ? `<path class="edge" d="${inactivePath}"></path>` : "",
+        activePathD ? `<path class="edge active" d="${activePathD}"></path>` : "",
+        activePathD ? `<path class="edge-flow" d="${activePathD}"></path>` : ""
+      ].join("");
+    }
+
+    function renderNodes() {
+      nodeLayer.innerHTML = Object.values(nodes)
+        .map((node) => {
+          const classes = [
+            "chat-node",
+            node.type,
+            isOnActivePath(node.id) ? "" : "inactive",
+            node.memory ? `memory memory-${node.memory}` : "",
+            node.id === activeLeafId ? "current" : "",
+            node.id === selectedNodeId ? "selected" : ""
+          ].filter(Boolean).join(" ");
+          return `
+            <button
+              class="${classes}"
+              type="button"
+              style="--x:${nodePosition(node.id).x}; --y:${nodePosition(node.id).y}"
+              data-node="${node.id}"
+              aria-label="${node.title}"
+            ></button>
+          `;
+        })
+        .join("");
+    }
+
+    function speakerName(node) {
+      return node.type === "user" ? "铲屎官" : "露喵";
+    }
+
+    function escapeHTML(value) {
+      return String(value)
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#39;");
+    }
+
+    function dialoguePreview(id) {
+      const path = pathToRoot(id);
+      const currentIndex = path.indexOf(id);
+      const start = Math.max(0, currentIndex - 1);
+      return path.slice(start, currentIndex + 1)
+        .map((nodeId) => {
+          const node = nodes[nodeId];
+          return `${speakerName(node)}：${node.text}`;
+        })
+        .join("\n");
+    }
+
+    function renderPathPanel() {
+      const path = activePath();
+      pathCount.textContent = `${path.length} 条`;
+      pathThread.innerHTML = path
+        .map((nodeId) => {
+          const node = nodes[nodeId];
+          const classes = [
+            "path-message",
+            node.type,
+            node.id === selectedNodeId ? "current" : ""
+          ].filter(Boolean).join(" ");
+          return `
+            <article class="${classes}">
+              <span class="path-avatar ${node.type}" aria-hidden="true"></span>
+              <div class="path-message__body">
+                <div class="path-message__meta">
+                  <span class="path-message__speaker">${escapeHTML(speakerName(node))}</span>
+                </div>
+                <p class="path-message__text">${escapeHTML(node.text)}</p>
+              </div>
+            </article>
+          `;
+        })
+        .join("");
+    }
+
+    function showTooltip(nodeId, target) {
+      const node = nodes[nodeId];
+      if (!node || !target) return;
+      tooltipAvatar.className = `tooltip__avatar ${node.type}`;
+      tooltipLabel.textContent = speakerName(node);
+      tooltipBody.textContent = node.text;
+      tooltip.classList.add("show");
+      tooltip.setAttribute("aria-hidden", "false");
+
+      const rect = target.getBoundingClientRect();
+      const tipWidth = tooltip.offsetWidth;
+      const tipHeight = tooltip.offsetHeight;
+      const centerX = rect.left + rect.width / 2;
+      const gap = 16;
+
+      let placement = "top";
+      let top = rect.top - tipHeight - gap;
+      if (top < 12) {
+        placement = "bottom";
+        top = rect.bottom + gap;
+      }
+      const left = clamp(centerX - tipWidth / 2, 12, window.innerWidth - tipWidth - 12);
+
+      tooltip.style.left = `${left}px`;
+      tooltip.style.top = `${top}px`;
+
+      const arrowX = clamp(centerX - left, 20, tipWidth - 20) - 6;
+      tooltipArrow.style.left = `${arrowX}px`;
+      if (placement === "top") {
+        tooltipArrow.style.top = "";
+        tooltipArrow.style.bottom = "-6px";
+      } else {
+        tooltipArrow.style.bottom = "";
+        tooltipArrow.style.top = "-6px";
+      }
+    }
+
+    function hideTooltip() {
+      tooltip.classList.remove("show");
+      tooltip.setAttribute("aria-hidden", "true");
+    }
+
+    function render() {
+      computeLayout();
+      zoomValue.textContent = `${Math.round(treeZoom * 100)}%`;
+      renderEdges();
+      renderNodes();
+      renderPathPanel();
+    }
+
+    function centerNode(id) {
+      const node = nodePosition(id);
+      viewport.scrollTo({
+        left: Math.max(0, (layout.paddingX || 0) + node.x * treeZoom - viewport.clientWidth / 2),
+        top: Math.max(0, (layout.paddingY || 0) + node.y * treeZoom - viewport.clientHeight / 2),
+        behavior: "smooth"
+      });
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function setTreeZoom(nextZoom, origin = {}) {
+      const previousZoom = treeZoom;
+      const zoom = clamp(nextZoom, 0.55, 1.7);
+      if (Math.abs(zoom - previousZoom) < 0.001) return;
+      userChangedZoom = true;
+
+      const rect = viewport.getBoundingClientRect();
+      const localX = Number.isFinite(origin.clientX) ? origin.clientX - rect.left : viewport.clientWidth / 2;
+      const localY = Number.isFinite(origin.clientY) ? origin.clientY - rect.top : viewport.clientHeight / 2;
+      const previousPaddingX = layout.paddingX || 0;
+      const previousPaddingY = layout.paddingY || 0;
+      const contentX = (viewport.scrollLeft + localX - previousPaddingX) / previousZoom;
+      const contentY = (viewport.scrollTop + localY - previousPaddingY) / previousZoom;
+
+      treeZoom = zoom;
+      zoomValue.textContent = `${Math.round(treeZoom * 100)}%`;
+      computeLayout();
+      viewport.scrollLeft = Math.max(0, (layout.paddingX || 0) + contentX * treeZoom - localX);
+      viewport.scrollTop = Math.max(0, (layout.paddingY || 0) + contentY * treeZoom - localY);
+    }
+
+    function showToast(message) {
+      toast.textContent = message;
+      toast.classList.add("show");
+      window.clearTimeout(showToast.timer);
+      showToast.timer = window.setTimeout(() => toast.classList.remove("show"), 1800);
+    }
+
+    document.getElementById("zoomOutBtn").addEventListener("click", () => setTreeZoom(treeZoom / 1.16));
+    document.getElementById("zoomInBtn").addEventListener("click", () => setTreeZoom(treeZoom * 1.16));
+    document.getElementById("zoomResetBtn").addEventListener("click", () => setTreeZoom(1));
+    document.querySelector(".close-button").addEventListener("click", () => showToast("Demo 中关闭按钮仅展示入口形态。"));
+
+    function wheelDeltaInPixels(event) {
+      const scale = event.deltaMode === WheelEvent.DOM_DELTA_LINE
+        ? 16
+        : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+          ? viewport.clientHeight
+          : 1;
+      return {
+        x: event.deltaX * scale,
+        y: event.deltaY * scale
+      };
+    }
+
+    viewport.addEventListener("wheel", (event) => {
+      event.preventDefault();
+      hideTooltip();
+      const delta = wheelDeltaInPixels(event);
+      if (event.ctrlKey || event.metaKey) {
+        const zoomFactor = Math.exp(-delta.y * 0.002);
+        setTreeZoom(treeZoom * zoomFactor, event);
+        return;
+      }
+      viewport.scrollLeft += delta.x;
+      viewport.scrollTop += delta.y;
+    }, { passive: false });
+    viewport.addEventListener("pointerdown", (event) => {
+      if (event.target.closest?.("button")) return;
+      hideTooltip();
+      panGesture = {
+        pointerId: event.pointerId,
+        clientX: event.clientX,
+        clientY: event.clientY,
+        scrollLeft: viewport.scrollLeft,
+        scrollTop: viewport.scrollTop
+      };
+      viewport.classList.add("is-panning");
+      viewport.setPointerCapture?.(event.pointerId);
+    });
+    viewport.addEventListener("pointermove", (event) => {
+      if (!panGesture || panGesture.pointerId !== event.pointerId) return;
+      viewport.scrollLeft = panGesture.scrollLeft - (event.clientX - panGesture.clientX);
+      viewport.scrollTop = panGesture.scrollTop - (event.clientY - panGesture.clientY);
+    });
+    function endPan(event) {
+      if (!panGesture || panGesture.pointerId !== event.pointerId) return;
+      panGesture = null;
+      viewport.classList.remove("is-panning");
+    }
+    viewport.addEventListener("pointerup", endPan);
+    viewport.addEventListener("pointercancel", endPan);
+    window.addEventListener("resize", () => {
+      if (userChangedZoom) return;
+      initialZoomApplied = false;
+      render();
+      centerNode(selectedNodeId);
+    });
+    nodeLayer.addEventListener("mouseover", (event) => {
+      const nodeButton = event.target.closest?.("[data-node]");
+      if (nodeButton) showTooltip(nodeButton.dataset.node, nodeButton);
+    });
+    nodeLayer.addEventListener("mouseout", (event) => {
+      const nodeButton = event.target.closest?.("[data-node]");
+      const next = event.relatedTarget?.closest?.("[data-node]");
+      if (nodeButton && nodeButton !== next) hideTooltip();
+    });
+    nodeLayer.addEventListener("focusin", (event) => {
+      const nodeButton = event.target.closest?.("[data-node]");
+      if (nodeButton) showTooltip(nodeButton.dataset.node, nodeButton);
+    });
+    nodeLayer.addEventListener("focusout", hideTooltip);
+    nodeLayer.addEventListener("click", (event) => {
+      const nodeButton = event.target.closest?.("[data-node]");
+      if (!nodeButton) return;
+      const id = nodeButton.dataset.node;
+      activeLeafId = id;
+      selectedNodeId = id;
+      render();
+      const fresh = nodeLayer.querySelector(`[data-node="${id}"]`);
+      if (fresh) showTooltip(id, fresh);
+    });
+    viewport.addEventListener("scroll", hideTooltip, { passive: true });
+
+    render();
+    window.requestAnimationFrame(() => centerNode("root"));
+  </script>
+</body>
+</html>
