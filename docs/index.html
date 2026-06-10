@@ -537,19 +537,22 @@
     }
 
     .message-card__action {
+      box-sizing: border-box;
       display: none;
       align-items: center;
-      gap: 8px;
+      justify-content: center;
+      gap: 4px;
       width: max-content;
-      min-height: 36px;
+      min-width: 72px;
+      min-height: 24px;
       margin-top: 12px;
-      padding: 8px 14px;
-      border: 1px solid rgba(143, 130, 247, 0.5);
-      border-radius: 999px;
-      color: rgba(248, 247, 255, 0.96);
-      background: linear-gradient(180deg, rgba(82, 72, 142, 0.46), rgba(50, 43, 98, 0.42));
-      box-shadow: 0 14px 34px -24px rgba(143, 130, 247, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-      font-size: 13px;
+      padding: 8px 12px;
+      border: 0;
+      border-radius: 27px;
+      color: #ffffff;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 100%), #8b5cf6;
+      box-shadow: none;
+      font-size: 12px;
       font-weight: 760;
       line-height: 1;
       letter-spacing: 0;
@@ -557,8 +560,8 @@
 
     .message-card__action::after {
       content: "↗";
-      color: rgba(218, 213, 255, 0.96);
-      font-size: 13px;
+      color: #ffffff;
+      font-size: 12px;
       line-height: 1;
     }
 
@@ -637,38 +640,39 @@
     }
 
     .tooltip__anchor {
+      box-sizing: border-box;
       align-self: flex-start;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      min-height: 36px;
+      justify-content: center;
+      gap: 4px;
+      min-width: 72px;
+      min-height: 24px;
       margin-top: 2px;
-      padding: 8px 14px;
-      border: 1px solid rgba(143, 130, 247, 0.5);
-      border-radius: 999px;
-      color: rgba(248, 247, 255, 0.96);
-      background: linear-gradient(180deg, rgba(82, 72, 142, 0.46), rgba(50, 43, 98, 0.42));
-      box-shadow: 0 14px 34px -24px rgba(143, 130, 247, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.12);
-      font-size: 13px;
+      padding: 8px 12px;
+      border: 0;
+      border-radius: 27px;
+      color: #ffffff;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 100%), #8b5cf6;
+      box-shadow: none;
+      font-size: 12px;
       font-weight: 760;
       line-height: 1;
       letter-spacing: 0;
-      transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+      transition: filter 160ms ease, transform 160ms ease;
     }
 
     .tooltip__anchor::after {
       content: "↗";
-      color: rgba(218, 213, 255, 0.96);
-      font-size: 13px;
+      color: #ffffff;
+      font-size: 12px;
       line-height: 1;
     }
 
     .tooltip__anchor:hover,
     .tooltip__anchor:focus-visible {
       outline: none;
-      border-color: rgba(169, 157, 255, 0.72);
-      background: linear-gradient(180deg, rgba(98, 85, 166, 0.56), rgba(61, 52, 116, 0.5));
-      box-shadow: 0 18px 44px -24px rgba(143, 130, 247, 1), inset 0 1px 0 rgba(255, 255, 255, 0.16);
+      filter: brightness(1.08);
       transform: translateY(-1px);
     }
 
