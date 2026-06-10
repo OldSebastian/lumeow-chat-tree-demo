@@ -440,6 +440,8 @@
       right: max(24px, env(safe-area-inset-right));
       bottom: max(24px, env(safe-area-inset-bottom));
       z-index: 20;
+      max-width: 880px;
+      margin-inline: auto;
       display: grid;
       grid-template-columns: 40px minmax(0, 1fr);
       gap: 14px;
@@ -1515,12 +1517,12 @@
 
     function animateCurrentMessage(id, type) {
       if (!motion.enabled || !id) return;
-      gsap.killTweensOf(messageCard);
-      const offset = type === "anchor" ? -7 : -4;
+      const targets = [messageName, messageCount, messageText].filter((element) => element && !element.hidden);
+      gsap.killTweensOf(targets);
       gsap.fromTo(
-        messageCard,
-        { y: 8, autoAlpha: 0.72 },
-        { y: 0, autoAlpha: 1, duration: 0.34, ease: "power2.out", clearProps: "transform,opacity,visibility" }
+        targets,
+        { autoAlpha: 0.72 },
+        { autoAlpha: 1, duration: 0.24, ease: "power2.out", clearProps: "opacity,visibility" }
       );
     }
 
