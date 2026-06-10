@@ -341,15 +341,15 @@
       width: 56px;
       height: 56px;
       transform: translate(-50%, -50%) scale(var(--node-scale, 1));
-      border: 2px solid rgba(143, 130, 247, 0.86);
+      border: 2px solid transparent;
       border-radius: 999px;
-      background-color: rgba(46, 38, 96, 0.54);
+      background-color: rgba(46, 38, 96, 0.24);
       background-clip: padding-box;
       background-position: center;
       background-repeat: no-repeat;
       background-size: contain;
       overflow: hidden;
-      box-shadow: 0 0 0 1px rgba(143, 130, 247, 0.08), 0 0 15px rgba(143, 130, 247, 0.26);
+      box-shadow: none;
       opacity: var(--node-opacity, 1);
       transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease, filter 160ms ease;
       will-change: transform, opacity;
@@ -372,46 +372,67 @@
     .chat-node:focus-visible {
       outline: none;
       --node-scale: 1.14;
-      border-color: rgba(173, 163, 255, 1);
-      box-shadow: 0 0 0 6px rgba(143, 130, 247, 0.13), 0 0 26px rgba(143, 130, 247, 0.52);
       z-index: 4;
     }
 
     .chat-node.inactive {
       --node-opacity: 0.2;
-      border-color: rgba(90, 101, 111, 0.8);
-      box-shadow: none;
       filter: none;
-    }
-
-    .chat-node.memory {
-      border-color: rgba(164, 176, 187, 0.82);
-    }
-
-    .chat-node.memory-short {
-      box-shadow: 0 0 13px rgba(139, 108, 255, 0.33);
-    }
-
-    .chat-node.memory-long {
-      box-shadow: 0 0 13px rgba(86, 200, 245, 0.28);
-    }
-
-    .chat-node.memory-permanent {
-      box-shadow: 0 0 13px rgba(246, 181, 30, 0.3);
     }
 
     .chat-node.current {
-      border-color: rgba(83, 226, 127, 1);
       filter: none;
       --node-opacity: 1;
-      box-shadow: 0 0 0 6px rgba(59, 211, 111, 0.12), 0 0 28px rgba(59, 211, 111, 0.52);
       z-index: 5;
     }
 
     .chat-node.selected {
+      --node-opacity: 1;
       border-color: rgba(143, 130, 247, 1);
-      box-shadow: 0 0 0 6px rgba(143, 130, 247, 0.12), 0 0 26px rgba(143, 130, 247, 0.5);
+      box-shadow: 0 0 0 7px rgba(143, 130, 247, 0.18), 0 0 34px rgba(143, 130, 247, 0.62);
       z-index: 6;
+    }
+
+    .node-jump-action {
+      box-sizing: border-box;
+      position: absolute;
+      left: calc(var(--x) * 1px);
+      top: calc(var(--y) * 1px);
+      z-index: 8;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 4px;
+      min-width: 72px;
+      min-height: 24px;
+      padding: 8px 12px;
+      border: 0;
+      border-radius: 27px;
+      color: #ffffff;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 100%), #8b5cf6;
+      box-shadow: 0 16px 38px -22px rgba(139, 92, 246, 0.95);
+      font-size: 12px;
+      font-weight: 760;
+      line-height: 1;
+      letter-spacing: 0;
+      opacity: var(--jump-opacity, 1);
+      transform: translate(38px, -50%);
+      transition: filter 160ms ease, transform 160ms ease, opacity 160ms ease;
+      white-space: nowrap;
+    }
+
+    .node-jump-action::after {
+      content: "↗";
+      color: #ffffff;
+      font-size: 12px;
+      line-height: 1;
+    }
+
+    .node-jump-action:hover,
+    .node-jump-action:focus-visible {
+      outline: none;
+      filter: brightness(1.08);
+      transform: translate(38px, calc(-50% - 1px));
     }
 
     .chat-node.selection-pop {
@@ -536,35 +557,6 @@
       word-break: break-word;
     }
 
-    .message-card__action {
-      box-sizing: border-box;
-      display: none;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      width: max-content;
-      min-width: 72px;
-      min-height: 24px;
-      margin-top: 12px;
-      padding: 8px 12px;
-      border: 0;
-      border-radius: 27px;
-      color: #ffffff;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 100%), #8b5cf6;
-      box-shadow: none;
-      font-size: 12px;
-      font-weight: 760;
-      line-height: 1;
-      letter-spacing: 0;
-    }
-
-    .message-card__action::after {
-      content: "↗";
-      color: #ffffff;
-      font-size: 12px;
-      line-height: 1;
-    }
-
     .tooltip {
       position: fixed;
       left: 0;
@@ -587,6 +579,7 @@
       pointer-events: none;
       transition: opacity 130ms ease, transform 130ms ease;
       will-change: transform, opacity;
+      isolation: isolate;
     }
 
     .tooltip.show {
@@ -595,7 +588,34 @@
       pointer-events: auto;
     }
 
+    .tooltip::after {
+      content: "";
+      position: absolute;
+      left: var(--arrow-center, 50%);
+      z-index: 2;
+      display: none;
+      width: 28px;
+      height: 3px;
+      background: rgba(24, 24, 27, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+
+    .tooltip.tail-top::after {
+      bottom: -1px;
+      display: block;
+    }
+
+    .tooltip.tail-bottom::after {
+      top: -1px;
+      display: block;
+    }
+
     .tooltip__avatar {
+      position: relative;
+      z-index: 3;
       flex: none;
       width: 32px;
       height: 32px;
@@ -616,6 +636,8 @@
     }
 
     .tooltip__content {
+      position: relative;
+      z-index: 3;
       display: flex;
       flex-direction: column;
       gap: 8px;
@@ -639,57 +661,65 @@
       white-space: pre-line;
     }
 
-    .tooltip__anchor {
-      box-sizing: border-box;
-      align-self: flex-start;
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      gap: 4px;
-      min-width: 72px;
-      min-height: 24px;
-      margin-top: 2px;
-      padding: 8px 12px;
-      border: 0;
-      border-radius: 27px;
-      color: #ffffff;
-      background: linear-gradient(180deg, rgba(255, 255, 255, 0.16) 0%, rgba(255, 255, 255, 0) 100%), #8b5cf6;
-      box-shadow: none;
-      font-size: 12px;
-      font-weight: 760;
-      line-height: 1;
-      letter-spacing: 0;
-      transition: filter 160ms ease, transform 160ms ease;
-    }
-
-    .tooltip__anchor::after {
-      content: "↗";
-      color: #ffffff;
-      font-size: 12px;
-      line-height: 1;
-    }
-
-    .tooltip__anchor:hover,
-    .tooltip__anchor:focus-visible {
-      outline: none;
-      filter: brightness(1.08);
-      transform: translateY(-1px);
-    }
-
     .tooltip__arrow {
       position: absolute;
-      width: 18px;
-      height: 10px;
-      background: rgba(24, 24, 27, 0.8);
+      z-index: 1;
+      width: 24px;
+      height: 14px;
       pointer-events: none;
+      overflow: hidden;
+    }
+
+    .tooltip__arrow::before,
+    .tooltip__arrow::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      clip-path: inherit;
+      pointer-events: none;
+    }
+
+    .tooltip__arrow::before {
+      background: rgba(255, 255, 255, 0.075);
+    }
+
+    .tooltip__arrow::after {
+      background: rgba(24, 24, 27, 0.8);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      transform: scale(0.88);
     }
 
     .tooltip__arrow.is-top {
       clip-path: polygon(0 0, 100% 0, 50% 100%);
     }
 
+    .tooltip__arrow.is-top::after {
+      transform-origin: 50% 0;
+    }
+
+    .tooltip__arrow.is-top::before {
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
+    }
+
+    .tooltip__arrow.is-top::after {
+      clip-path: polygon(8% 0, 92% 0, 50% 86%);
+    }
+
     .tooltip__arrow.is-bottom {
       clip-path: polygon(50% 0, 0 100%, 100% 100%);
+    }
+
+    .tooltip__arrow.is-bottom::after {
+      transform-origin: 50% 100%;
+    }
+
+    .tooltip__arrow.is-bottom::before {
+      clip-path: polygon(50% 0, 0 100%, 100% 100%);
+    }
+
+    .tooltip__arrow.is-bottom::after {
+      clip-path: polygon(50% 14%, 8% 100%, 92% 100%);
     }
 
     .toast {
@@ -798,10 +828,6 @@
         display: none;
       }
 
-      .message-card__action {
-        display: inline-flex;
-      }
-
     }
 
     @media (max-width: 480px) {
@@ -875,7 +901,6 @@
             <span class="message-card__count" id="messageCount"></span>
           </div>
           <p class="message-card__text" id="messageText"></p>
-          <button class="message-card__action" id="messageActionBtn" type="button">切换并跳转</button>
         </div>
       </aside>
     </section>
@@ -885,7 +910,6 @@
     <span class="tooltip__content">
       <span class="tooltip__label" id="tooltipLabel"></span>
       <span class="tooltip__body" id="tooltipBody"></span>
-      <button class="tooltip__anchor" id="tooltipAnchorBtn" type="button">切换并跳转</button>
     </span>
     <i class="tooltip__arrow" id="tooltipArrow"></i>
   </div>
@@ -1187,7 +1211,6 @@
     const tooltipLabel = document.getElementById("tooltipLabel");
     const tooltipBody = document.getElementById("tooltipBody");
     const tooltipArrow = document.getElementById("tooltipArrow");
-    const tooltipAnchorBtn = document.getElementById("tooltipAnchorBtn");
     const toast = document.getElementById("toast");
     const zoomValue = document.getElementById("zoomValue");
     const messageCard = document.getElementById("messageCard");
@@ -1195,7 +1218,6 @@
     const messageName = document.getElementById("messageName");
     const messageCount = document.getElementById("messageCount");
     const messageText = document.getElementById("messageText");
-    const messageActionBtn = document.getElementById("messageActionBtn");
     const hoverTooltipQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
 
     if (motion.enabled) {
@@ -1444,6 +1466,7 @@
     function renderNodes() {
       const nodeButtons = visibleNodes()
         .map((node) => {
+          const position = nodePosition(node.id);
           const classes = [
             "chat-node",
             node.type,
@@ -1456,14 +1479,27 @@
             <button
               class="${classes}"
               type="button"
-              style="--x:${nodePosition(node.id).x}; --y:${nodePosition(node.id).y}"
+              style="--x:${position.x}; --y:${position.y}"
               data-node="${node.id}"
               aria-label="${node.title}"
             ></button>
           `;
         })
         .join("");
-      nodeLayer.innerHTML = nodeButtons;
+      const selectedNode = nodes[selectedNodeId];
+      const selectedPosition = selectedNode ? nodePosition(selectedNodeId) : null;
+      const jumpAction = selectedNode && selectedPosition
+        ? `
+          <button
+            class="node-jump-action"
+            type="button"
+            style="--x:${selectedPosition.x}; --y:${selectedPosition.y}"
+            data-jump-action="${selectedNodeId}"
+            aria-label="切换并跳转到对应会话"
+          >切换并跳转</button>
+        `
+        : "";
+      nodeLayer.innerHTML = nodeButtons + jumpAction;
     }
 
     function speakerName(node) {
@@ -1612,8 +1648,7 @@
       if (!node || !target) return;
       tooltipAvatar.className = `tooltip__avatar ${node.type}`;
       tooltipLabel.textContent = speakerName(node);
-      tooltipBody.textContent = node.text;
-      tooltipAnchorBtn.dataset.node = nodeId;
+      tooltipBody.textContent = messageTextWithoutCount(node);
       tooltip.classList.add("show");
       tooltip.setAttribute("aria-hidden", "false");
 
@@ -1622,8 +1657,8 @@
       const tipHeight = tooltip.offsetHeight;
       const centerX = rect.left + rect.width / 2;
       const gap = 26;
-      const arrowWidth = 18;
-      const arrowOverlap = 9;
+      const arrowWidth = 24;
+      const arrowOverlap = 12;
 
       let placement = "top";
       let top = rect.top - tipHeight - gap;
@@ -1640,6 +1675,9 @@
       tooltipArrow.style.left = `${arrowX}px`;
       tooltipArrow.classList.toggle("is-top", placement === "top");
       tooltipArrow.classList.toggle("is-bottom", placement !== "top");
+      tooltip.classList.toggle("tail-top", placement === "top");
+      tooltip.classList.toggle("tail-bottom", placement !== "top");
+      tooltip.style.setProperty("--arrow-center", `${arrowX + arrowWidth / 2}px`);
       if (placement === "top") {
         tooltipArrow.style.top = "";
         tooltipArrow.style.bottom = `-${arrowOverlap}px`;
@@ -1661,6 +1699,7 @@
     function hideTooltip() {
       window.clearTimeout(tooltipHideTimer);
       tooltip.classList.remove("show");
+      tooltip.classList.remove("tail-top", "tail-bottom");
       tooltip.setAttribute("aria-hidden", "true");
     }
 
@@ -1747,17 +1786,6 @@
     document.querySelector(".close-button").addEventListener("click", () => showToast("Demo 中关闭按钮仅展示入口形态。"));
     tooltip.addEventListener("mouseenter", () => window.clearTimeout(tooltipHideTimer));
     tooltip.addEventListener("mouseleave", scheduleTooltipHide);
-    tooltipAnchorBtn.addEventListener("click", () => {
-      const id = tooltipAnchorBtn.dataset.node;
-      if (!id) return;
-      selectConversationNode(id, { fromAnchor: true });
-      centerNode(id);
-      hideTooltip();
-    });
-    messageActionBtn.addEventListener("click", () => {
-      selectConversationNode(selectedNodeId, { fromAnchor: true });
-      centerNode(selectedNodeId);
-    });
 
     function wheelDeltaInPixels(event) {
       const scale = event.deltaMode === WheelEvent.DOM_DELTA_LINE
@@ -1835,6 +1863,12 @@
       hideTooltip();
     });
     nodeLayer.addEventListener("click", (event) => {
+      const jumpButton = event.target.closest?.("[data-jump-action]");
+      if (jumpButton) {
+        showToast("Demo 中这里会切换并跳转到对应会话。");
+        hideTooltip();
+        return;
+      }
       const nodeButton = event.target.closest?.("[data-node]");
       if (!nodeButton) return;
       const id = nodeButton.dataset.node;
