@@ -29,6 +29,8 @@
       --tree-zoom: 1;
       --radius-card: 28px;
       --shadow-card: 0 30px 80px -42px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.04) inset;
+      --motion-spring: cubic-bezier(0.18, 0.92, 0.22, 1);
+      --motion-soft: cubic-bezier(0.22, 1, 0.36, 1);
       font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
     }
 
@@ -289,6 +291,10 @@
       filter: drop-shadow(0 0 8px rgba(143, 130, 247, 0.32));
     }
 
+    .edge.active.path-kick {
+      animation: active-path-kick 680ms var(--motion-soft);
+    }
+
     .edge-flow {
       fill: none;
       stroke: rgba(193, 186, 255, 0.95);
@@ -308,13 +314,33 @@
       }
     }
 
+    @keyframes active-path-kick {
+      0% {
+        stroke-width: 1.4;
+        opacity: 0.45;
+        filter: drop-shadow(0 0 0 rgba(143, 130, 247, 0));
+      }
+
+      42% {
+        stroke-width: 2.7;
+        opacity: 1;
+        filter: drop-shadow(0 0 14px rgba(143, 130, 247, 0.56));
+      }
+
+      100% {
+        stroke-width: 1.9;
+        opacity: 1;
+        filter: drop-shadow(0 0 8px rgba(143, 130, 247, 0.32));
+      }
+    }
+
     .chat-node {
       position: absolute;
       left: calc(var(--x) * 1px);
       top: calc(var(--y) * 1px);
       width: 56px;
       height: 56px;
-      transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%) scale(var(--node-scale, 1));
       border: 2px solid rgba(143, 130, 247, 0.86);
       border-radius: 999px;
       background-color: rgba(46, 38, 96, 0.54);
@@ -324,7 +350,9 @@
       background-size: contain;
       overflow: hidden;
       box-shadow: 0 0 0 1px rgba(143, 130, 247, 0.08), 0 0 15px rgba(143, 130, 247, 0.26);
+      opacity: var(--node-opacity, 1);
       transition: transform 160ms ease, border-color 160ms ease, box-shadow 160ms ease, opacity 160ms ease, filter 160ms ease;
+      will-change: transform, opacity;
       z-index: 2;
     }
 
@@ -343,17 +371,17 @@
     .chat-node:hover,
     .chat-node:focus-visible {
       outline: none;
-      transform: translate(-50%, -50%) scale(1.14);
+      --node-scale: 1.14;
       border-color: rgba(173, 163, 255, 1);
       box-shadow: 0 0 0 6px rgba(143, 130, 247, 0.13), 0 0 26px rgba(143, 130, 247, 0.52);
       z-index: 4;
     }
 
     .chat-node.inactive {
+      --node-opacity: 0.2;
       border-color: rgba(90, 101, 111, 0.8);
       box-shadow: none;
       filter: none;
-      opacity: 0.2;
     }
 
     .chat-node.memory {
@@ -375,7 +403,7 @@
     .chat-node.current {
       border-color: rgba(83, 226, 127, 1);
       filter: none;
-      opacity: 1;
+      --node-opacity: 1;
       box-shadow: 0 0 0 6px rgba(59, 211, 111, 0.12), 0 0 28px rgba(59, 211, 111, 0.52);
       z-index: 5;
     }
@@ -384,6 +412,50 @@
       border-color: rgba(143, 130, 247, 1);
       box-shadow: 0 0 0 6px rgba(143, 130, 247, 0.12), 0 0 26px rgba(143, 130, 247, 0.5);
       z-index: 6;
+    }
+
+    .chat-node.selection-pop {
+      animation: node-selection-pop 520ms var(--motion-spring);
+    }
+
+    .chat-node.branch-enter {
+      animation: branch-node-enter 560ms var(--motion-spring) backwards;
+    }
+
+    @keyframes node-selection-pop {
+      0% {
+        transform: translate(-50%, -50%) scale(0.82);
+        box-shadow: 0 0 0 0 rgba(143, 130, 247, 0);
+      }
+
+      55% {
+        transform: translate(-50%, -50%) scale(1.2);
+        box-shadow: 0 0 0 10px rgba(143, 130, 247, 0.14), 0 0 34px rgba(143, 130, 247, 0.58);
+      }
+
+      100% {
+        transform: translate(-50%, -50%) scale(1);
+      }
+    }
+
+    @keyframes branch-node-enter {
+      0% {
+        opacity: 0;
+        transform: translate(-50%, -34%) scale(0.72);
+        filter: blur(5px);
+      }
+
+      70% {
+        opacity: 1;
+        transform: translate(-50%, -52%) scale(1.08);
+        filter: blur(0);
+      }
+
+      100% {
+        opacity: 1;
+        transform: translate(-50%, -50%) scale(1);
+        filter: blur(0);
+      }
     }
 
     .branch-toggle {
@@ -406,6 +478,18 @@
       font-weight: 760;
       line-height: 1;
       transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+      will-change: transform, opacity;
+    }
+
+    .branch-toggle:not(.expanded)::before {
+      content: "";
+      position: absolute;
+      inset: -6px;
+      border: 1px solid rgba(143, 130, 247, 0.22);
+      border-radius: inherit;
+      opacity: 0;
+      animation: branch-toggle-breathe 2.6s ease-in-out infinite;
+      pointer-events: none;
     }
 
     .branch-toggle:hover,
@@ -423,175 +507,135 @@
       background: rgba(32, 58, 72, 0.82);
     }
 
-    .path-panel {
-      position: absolute;
-      left: 24px;
-      top: 24px;
-      bottom: 24px;
-      z-index: 8;
-      width: 340px;
-      display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      border: 1px solid rgba(255, 255, 255, 0.09);
-      border-radius: 26px;
-      background: rgba(22, 22, 25, 0.66);
-      box-shadow: 0 34px 100px -48px rgba(0, 0, 0, 0.95), 0 0 0 1px rgba(143, 130, 247, 0.06) inset;
-      backdrop-filter: blur(40px);
-      -webkit-backdrop-filter: blur(40px);
+    .branch-toggle.toggle-pop {
+      animation: branch-toggle-pop 360ms var(--motion-spring);
     }
 
-    .path-panel::before {
+    @keyframes branch-toggle-breathe {
+      0%,
+      72%,
+      100% {
+        opacity: 0;
+        transform: scale(0.86);
+      }
+
+      28% {
+        opacity: 0.8;
+        transform: scale(1);
+      }
+    }
+
+    @keyframes branch-toggle-pop {
+      0% {
+        transform: translate(34px, 8px) scale(0.86);
+      }
+
+      64% {
+        transform: translate(34px, 7px) scale(1.08);
+      }
+
+      100% {
+        transform: translate(34px, 8px) scale(1);
+      }
+    }
+
+    .message-card {
+      position: absolute;
+      left: max(24px, env(safe-area-inset-left));
+      right: max(24px, env(safe-area-inset-right));
+      bottom: max(24px, env(safe-area-inset-bottom));
+      z-index: 20;
+      display: grid;
+      grid-template-columns: 40px minmax(0, 1fr);
+      gap: 14px;
+      min-height: 120px;
+      padding: 22px 24px;
+      overflow: hidden;
+      border: 1px solid rgba(255, 255, 255, 0.075);
+      border-radius: 28px;
+      background: rgba(24, 24, 27, 0.8);
+      box-shadow: 0 30px 90px -52px rgba(0, 0, 0, 0.95), 0 1px 0 rgba(255, 255, 255, 0.045) inset;
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
+      will-change: transform, opacity;
+    }
+
+    .message-card::before {
       content: "";
       position: absolute;
       inset: 0;
       border-radius: inherit;
-      background:
-        linear-gradient(180deg, rgba(255, 255, 255, 0.055), rgba(255, 255, 255, 0) 34%),
-        radial-gradient(circle at 22% 0%, rgba(143, 130, 247, 0.12), transparent 32%);
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0) 46%);
       pointer-events: none;
     }
 
-    .path-panel__header,
-    .path-thread {
+    .message-card__avatar,
+    .message-card__body {
       position: relative;
       z-index: 1;
     }
 
-    .path-panel__header {
+    .message-card__avatar {
+      width: 40px;
+      height: 40px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 999px;
+      background-color: rgba(255, 255, 255, 0.04);
+      background-position: center;
+      background-repeat: no-repeat;
+      background-size: contain;
+      box-shadow: 0 0 0 1px rgba(255, 255, 255, 0.05) inset;
+    }
+
+    .message-card__avatar.user {
+      background-image: url("assets/lumeow-user-avatar.png");
+    }
+
+    .message-card__avatar.assistant {
+      background-image: url("assets/lumeow-cat-avatar.png");
+    }
+
+    .message-card__body {
+      min-width: 0;
+    }
+
+    .message-card__meta {
       display: flex;
-      align-items: flex-start;
-      justify-content: space-between;
-      gap: 12px;
-      padding: 18px 18px 14px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.07);
+      align-items: center;
+      gap: 10px;
+      margin: 0 0 10px;
+      min-width: 0;
     }
 
-    .path-panel__eyebrow {
-      margin: 0 0 5px;
-      color: rgba(232, 232, 235, 0.5);
-      font-size: 11px;
-      font-weight: 650;
-      line-height: 1;
-    }
-
-    .path-panel__title {
+    .message-card__name {
       margin: 0;
       color: rgba(255, 255, 255, 0.95);
-      font-size: 18px;
-      font-weight: 760;
+      font-size: 20px;
+      font-weight: 780;
       line-height: 1.2;
     }
 
-    .path-panel__count {
+    .message-card__count {
       flex: none;
-      margin-top: 1px;
-      padding: 6px 10px;
+      padding: 4px 8px;
       border: 1px solid rgba(255, 255, 255, 0.08);
       border-radius: 999px;
-      color: rgba(232, 232, 235, 0.72);
+      color: rgba(232, 232, 235, 0.62);
       background: rgba(255, 255, 255, 0.035);
       font-size: 12px;
       font-weight: 700;
       line-height: 1;
-      font-variant-numeric: tabular-nums;
       white-space: nowrap;
     }
 
-    .path-thread {
-      flex: 1;
-      min-height: 0;
-      overflow-y: auto;
-      padding: 10px 12px 16px;
-      scrollbar-width: none;
-    }
-
-    .path-thread::-webkit-scrollbar {
-      display: none;
-    }
-
-    .path-message {
-      position: relative;
-      display: grid;
-      grid-template-columns: 32px minmax(0, 1fr);
-      gap: 10px;
-      padding: 10px 8px 12px;
-      border-radius: 18px;
-    }
-
-    .path-message::before {
-      content: "";
-      position: absolute;
-      left: 24px;
-      top: 48px;
-      bottom: -4px;
-      width: 1px;
-      border-radius: 999px;
-      background: linear-gradient(180deg, rgba(143, 130, 247, 0.32), rgba(255, 255, 255, 0.06));
-    }
-
-    .path-message:last-child::before {
-      display: none;
-    }
-
-    .path-message.current {
-      border: 1px solid rgba(143, 130, 247, 0.16);
-      background: rgba(39, 38, 52, 0.96);
-      box-shadow: 0 16px 44px -34px rgba(143, 130, 247, 0.7);
-    }
-
-    .path-message.current::before {
-      display: none;
-    }
-
-    .path-avatar {
-      position: relative;
-      z-index: 1;
-      width: 32px;
-      height: 32px;
-      border: 1px solid rgba(255, 255, 255, 0.12);
-      border-radius: 999px;
-      background-color: rgba(46, 38, 96, 0.5);
-      background-position: center;
-      background-repeat: no-repeat;
-      background-size: contain;
-    }
-
-    .path-avatar.user {
-      background-image: url("assets/lumeow-user-avatar.png");
-    }
-
-    .path-avatar.assistant {
-      background-image: url("assets/lumeow-cat-avatar.png");
-    }
-
-    .path-message.current .path-avatar {
-      border-color: rgba(143, 130, 247, 0.9);
-      box-shadow: 0 0 0 3px rgba(143, 130, 247, 0.12), 0 0 18px rgba(143, 130, 247, 0.36);
-    }
-
-    .path-message__meta {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      min-width: 0;
-      margin-bottom: 5px;
-    }
-
-    .path-message__speaker {
-      flex: none;
-      color: rgba(255, 255, 255, 0.92);
-      font-size: 13px;
-      font-weight: 760;
-      line-height: 1.25;
-      white-space: nowrap;
-    }
-
-    .path-message__text {
+    .message-card__text {
       margin: 0;
-      color: rgba(232, 232, 235, 0.76);
-      font-size: 13px;
-      line-height: 1.58;
+      max-width: 1180px;
+      color: rgba(232, 232, 235, 0.86);
+      font-size: 16px;
+      font-weight: 400;
+      line-height: 1.65;
+      white-space: pre-line;
       word-break: break-word;
     }
 
@@ -616,6 +660,7 @@
       transform: translateY(4px);
       pointer-events: none;
       transition: opacity 130ms ease, transform 130ms ease;
+      will-change: transform, opacity;
     }
 
     .tooltip.show {
@@ -703,12 +748,21 @@
 
     .tooltip__arrow {
       position: absolute;
-      width: 12px;
-      height: 12px;
+      width: 10px;
+      height: 10px;
       background: rgba(22, 22, 25, 0.88);
+      transform: rotate(45deg);
+      pointer-events: none;
+    }
+
+    .tooltip__arrow.is-top {
       border-right: 1px solid rgba(255, 255, 255, 0.08);
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      transform: rotate(45deg);
+    }
+
+    .tooltip__arrow.is-bottom {
+      border-left: 1px solid rgba(255, 255, 255, 0.08);
+      border-top: 1px solid rgba(255, 255, 255, 0.08);
     }
 
     .toast {
@@ -797,47 +851,33 @@
         transform: translate(31px, 6px);
       }
 
-      .path-panel {
+      .message-card {
         left: 12px;
-        top: 12px;
-        bottom: auto;
-        width: min(320px, calc(100vw - 24px));
-        max-height: min(390px, 48vh);
-        border-radius: 22px;
+        right: 12px;
+        bottom: 12px;
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: 12px;
+        min-height: 110px;
+        padding: 18px;
+        border-radius: 24px;
       }
 
-      .path-panel__header {
-        padding: 14px 14px 11px;
+      .message-card__avatar {
+        width: 40px;
+        height: 40px;
       }
 
-      .path-panel__title {
-        font-size: 16px;
+      .message-card__name {
+        font-size: 17px;
       }
 
-      .path-thread {
-        padding: 8px 10px 12px;
+      .message-card__count {
+        font-size: 11px;
       }
 
-      .path-message {
-        grid-template-columns: 28px minmax(0, 1fr);
-        gap: 9px;
-        padding: 8px 7px 10px;
-      }
-
-      .path-message::before {
-        left: 21px;
-        top: 42px;
-        bottom: -2px;
-      }
-
-      .path-avatar {
-        width: 28px;
-        height: 28px;
-      }
-
-      .path-message__speaker,
-      .path-message__text {
-        font-size: 12px;
+      .message-card__text {
+        font-size: 14px;
+        line-height: 1.58;
       }
 
     }
@@ -855,13 +895,29 @@
         display: none;
       }
 
-      .path-panel {
-        top: auto;
+      .message-card {
         left: 10px;
         right: 10px;
         bottom: 10px;
-        width: auto;
-        max-height: 36vh;
+        grid-template-columns: 40px minmax(0, 1fr);
+        gap: 10px;
+        min-height: 96px;
+        max-height: 34vh;
+        padding: 14px;
+        overflow-y: auto;
+      }
+
+      .message-card__avatar {
+        width: 40px;
+        height: 40px;
+      }
+
+      .message-card__name {
+        font-size: 16px;
+      }
+
+      .message-card__text {
+        font-size: 13px;
       }
     }
   </style>
@@ -889,15 +945,15 @@
           </div>
         </div>
       </div>
-      <aside class="path-panel" aria-label="当前选中路径的完整会话上下文">
-        <header class="path-panel__header">
-          <div>
-            <p class="path-panel__eyebrow">当前选中路径</p>
-            <h2 class="path-panel__title">会话上下文</h2>
+      <aside class="message-card" id="messageCard" aria-label="当前选中节点的消息">
+        <span class="message-card__avatar" id="messageAvatar" aria-hidden="true"></span>
+        <div class="message-card__body">
+          <div class="message-card__meta">
+            <h2 class="message-card__name" id="messageName"></h2>
+            <span class="message-card__count" id="messageCount"></span>
           </div>
-          <span class="path-panel__count" id="pathCount">0 条</span>
-        </header>
-        <div class="path-thread" id="pathThread"></div>
+          <p class="message-card__text" id="messageText"></p>
+        </div>
       </aside>
     </section>
   </main>
@@ -906,12 +962,13 @@
     <span class="tooltip__content">
       <span class="tooltip__label" id="tooltipLabel"></span>
       <span class="tooltip__body" id="tooltipBody"></span>
-      <button class="tooltip__anchor" id="tooltipAnchorBtn" type="button">定位会话</button>
+      <button class="tooltip__anchor" id="tooltipAnchorBtn" type="button">查看消息</button>
     </span>
     <i class="tooltip__arrow" id="tooltipArrow"></i>
   </div>
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
+  <script src="https://cdn.jsdelivr.net/npm/gsap@3.12.5/dist/gsap.min.js"></script>
   <script>
     const nodes = {
       root: { id: "root", parent: null, x: 600, y: 58, type: "assistant", title: "The Maze", text: "Anon has entered the maze. The opening in the hedges that they had come in through closes and knits together behind them until it's impossible to tell where the opening had been, and it's clear that there's no way back out. There is a path going forward, a path going to the left, and a path going to the right. Which path will they take?", memory: "permanent" },
@@ -1190,6 +1247,14 @@
     let panGesture = null;
     let tooltipHideTimer = null;
     const expandedBranchIds = new Set();
+    const motion = {
+      enabled: Boolean(window.gsap) && !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
+      initialized: false,
+      previousVisibleIds: new Set(),
+      previousActiveIds: new Set(),
+      previousSelectedId: selectedNodeId,
+      pending: { type: "initial" }
+    };
     const graphCanvas = document.getElementById("graphCanvas");
     const graphContent = document.getElementById("graphContent");
     const nodeLayer = document.getElementById("nodeLayer");
@@ -1203,8 +1268,15 @@
     const tooltipAnchorBtn = document.getElementById("tooltipAnchorBtn");
     const toast = document.getElementById("toast");
     const zoomValue = document.getElementById("zoomValue");
-    const pathThread = document.getElementById("pathThread");
-    const pathCount = document.getElementById("pathCount");
+    const messageCard = document.getElementById("messageCard");
+    const messageAvatar = document.getElementById("messageAvatar");
+    const messageName = document.getElementById("messageName");
+    const messageCount = document.getElementById("messageCount");
+    const messageText = document.getElementById("messageText");
+
+    if (motion.enabled) {
+      gsap.defaults({ duration: 0.42, ease: "power2.out", overwrite: "auto" });
+    }
 
     function isNodeVisible(node) {
       return !node.branchGroupParent || expandedBranchIds.has(node.branchGroupParent);
@@ -1244,6 +1316,7 @@
 
     function toggleBranchGroup(parentId) {
       if (!hasBranchGroup(parentId)) return;
+      const expanded = !expandedBranchIds.has(parentId);
       if (expandedBranchIds.has(parentId)) {
         expandedBranchIds.delete(parentId);
         if (branchGroupContains(parentId, activeLeafId)) {
@@ -1253,6 +1326,7 @@
       } else {
         expandedBranchIds.add(parentId);
       }
+      setPendingMotion("branch", { parentId, expanded });
       render();
       const fresh = nodeLayer.querySelector(`[data-node="${parentId}"]`);
       if (fresh) showTooltip(parentId, fresh);
@@ -1546,30 +1620,151 @@
         .join("\n");
     }
 
-    function renderPathPanel() {
-      const path = activePath();
-      pathCount.textContent = `${path.length} 条`;
-      pathThread.innerHTML = path
-        .map((nodeId) => {
-          const node = nodes[nodeId];
-          const classes = [
-            "path-message",
-            node.type,
-            node.id === selectedNodeId ? "current" : ""
-          ].filter(Boolean).join(" ");
-          return `
-            <article class="${classes}" data-path-node="${node.id}">
-              <span class="path-avatar ${node.type}" aria-hidden="true"></span>
-              <div class="path-message__body">
-                <div class="path-message__meta">
-                  <span class="path-message__speaker">${escapeHTML(speakerName(node))}</span>
-                </div>
-                <p class="path-message__text">${escapeHTML(node.text)}</p>
-              </div>
-            </article>
-          `;
-        })
-        .join("");
+    function messageCountLabel(node) {
+      return /^第\s*\d+\s*条$/.test(node.title || "") ? node.title.replace(/\s+/g, " ") : "";
+    }
+
+    function messageTextWithoutCount(node) {
+      return String(node.text || "").replace(/（第\s*\d+\s*条）\s*$/, "");
+    }
+
+    function renderMessageCard() {
+      const node = nodes[selectedNodeId] || nodes[activeLeafId] || nodes.root;
+      if (!node) return;
+      messageAvatar.className = `message-card__avatar ${node.type}`;
+      messageName.textContent = speakerName(node);
+      messageCount.textContent = messageCountLabel(node);
+      messageCount.hidden = !messageCount.textContent;
+      messageText.textContent = messageTextWithoutCount(node);
+    }
+
+    function setPendingMotion(type, data = {}) {
+      motion.pending = { type, ...data };
+    }
+
+    function escapedDataSelector(attribute, value) {
+      const safeValue = window.CSS?.escape ? CSS.escape(String(value)) : String(value).replace(/"/g, '\\"');
+      return `[${attribute}="${safeValue}"]`;
+    }
+
+    function animateNodePulse(id) {
+      if (!motion.enabled || !id) return;
+      const node = nodeLayer.querySelector(escapedDataSelector("data-node", id));
+      if (!node) return;
+      gsap.killTweensOf(node);
+      gsap.fromTo(
+        node,
+        { "--node-scale": 0.88, filter: "brightness(1.22)" },
+        {
+          "--node-scale": 1,
+          filter: "brightness(1)",
+          duration: 0.56,
+          ease: "back.out(2.15)",
+          clearProps: "--node-scale,filter"
+        }
+      );
+    }
+
+    function animateActiveRoute() {
+      if (!motion.enabled) return;
+      const activeEdge = edgeSvg.querySelector(".edge.active");
+      const flowEdge = edgeSvg.querySelector(".edge-flow");
+      if (activeEdge) {
+        gsap.fromTo(
+          activeEdge,
+          { opacity: 0.35, strokeWidth: 1.2 },
+          { opacity: 1, strokeWidth: 1.9, duration: 0.52, ease: "power2.out", clearProps: "opacity,strokeWidth" }
+        );
+      }
+      if (flowEdge) {
+        gsap.fromTo(
+          flowEdge,
+          { opacity: 0.15 },
+          { opacity: 0.9, duration: 0.62, ease: "sine.out", clearProps: "opacity" }
+        );
+      }
+    }
+
+    function animateCurrentMessage(id, type) {
+      if (!motion.enabled || !id) return;
+      gsap.killTweensOf(messageCard);
+      const offset = type === "anchor" ? -7 : -4;
+      gsap.fromTo(
+        messageCard,
+        { y: 8, autoAlpha: 0.72 },
+        { y: 0, autoAlpha: 1, duration: 0.34, ease: "power2.out", clearProps: "transform,opacity,visibility" }
+      );
+    }
+
+    function animateBranchToggle(parentId) {
+      if (!motion.enabled || !parentId) return;
+      const toggle = nodeLayer.querySelector(escapedDataSelector("data-branch-toggle", parentId));
+      if (!toggle) return;
+      gsap.killTweensOf(toggle);
+      gsap.fromTo(
+        toggle,
+        { scale: 0.88, y: 2 },
+        { scale: 1, y: 0, duration: 0.36, ease: "back.out(2.2)", clearProps: "transform" }
+      );
+    }
+
+    function runMotionEffects({ currentVisibleIds, previousVisibleIds, previousActiveIds, previousSelectedId }) {
+      if (!motion.enabled) return;
+
+      const pending = motion.pending || {};
+      const enteringIds = currentVisibleIds.filter((id) => !previousVisibleIds.has(id));
+      const activeIds = new Set(activePath());
+      const activeChanged = activeIds.size !== previousActiveIds.size
+        || [...activeIds].some((id) => !previousActiveIds.has(id));
+      const selectedChanged = selectedNodeId !== previousSelectedId;
+
+      if (!motion.initialized) {
+        const initialNodes = currentVisibleIds
+          .slice(0, 140)
+          .map((id) => nodeLayer.querySelector(escapedDataSelector("data-node", id)))
+          .filter(Boolean);
+        gsap.timeline({ defaults: { ease: "power2.out" } })
+          .fromTo(".message-card", { y: 18, autoAlpha: 0 }, { y: 0, autoAlpha: 1, duration: 0.46, clearProps: "transform,opacity,visibility" }, 0)
+          .fromTo(
+            initialNodes,
+            { "--node-scale": 0.82, "--node-opacity": 0 },
+            {
+              "--node-scale": 1,
+              "--node-opacity": (index, target) => target.classList.contains("inactive") ? 0.2 : 1,
+              duration: 0.58,
+              stagger: { amount: 0.48, from: "center" },
+              clearProps: "--node-scale,--node-opacity"
+            },
+            0.08
+          );
+        motion.initialized = true;
+      } else if (pending.type === "branch" && enteringIds.length) {
+        const enteringNodes = enteringIds
+          .map((id) => nodeLayer.querySelector(escapedDataSelector("data-node", id)))
+          .filter(Boolean);
+        gsap.fromTo(
+          enteringNodes,
+          { "--node-scale": 0.72, "--node-opacity": 0, filter: "blur(4px)" },
+          {
+            "--node-scale": 1,
+            "--node-opacity": (index, target) => target.classList.contains("inactive") ? 0.2 : 1,
+            filter: "blur(0px)",
+            duration: 0.46,
+            stagger: { each: 0.035, from: "start" },
+            ease: "back.out(1.65)",
+            clearProps: "--node-scale,--node-opacity,filter"
+          }
+        );
+      }
+
+      if (pending.type === "branch") animateBranchToggle(pending.parentId);
+      if (selectedChanged || pending.type === "select" || pending.type === "anchor") {
+        animateNodePulse(selectedNodeId);
+        animateCurrentMessage(selectedNodeId, pending.type);
+      }
+      if (activeChanged || pending.type === "select" || pending.type === "anchor") {
+        animateActiveRoute();
+      }
     }
 
     function showTooltip(nodeId, target) {
@@ -1586,7 +1781,9 @@
       const tipWidth = tooltip.offsetWidth;
       const tipHeight = tooltip.offsetHeight;
       const centerX = rect.left + rect.width / 2;
-      const gap = 16;
+      const gap = 26;
+      const arrowSize = 10;
+      const arrowOverlap = 4;
 
       let placement = "top";
       let top = rect.top - tipHeight - gap;
@@ -1599,14 +1796,25 @@
       tooltip.style.left = `${left}px`;
       tooltip.style.top = `${top}px`;
 
-      const arrowX = clamp(centerX - left, 20, tipWidth - 20) - 6;
+      const arrowX = clamp(centerX - left, 20, tipWidth - 20) - arrowSize / 2;
       tooltipArrow.style.left = `${arrowX}px`;
+      tooltipArrow.classList.toggle("is-top", placement === "top");
+      tooltipArrow.classList.toggle("is-bottom", placement !== "top");
       if (placement === "top") {
         tooltipArrow.style.top = "";
-        tooltipArrow.style.bottom = "-6px";
+        tooltipArrow.style.bottom = `-${arrowOverlap}px`;
       } else {
         tooltipArrow.style.bottom = "";
-        tooltipArrow.style.top = "-6px";
+        tooltipArrow.style.top = `-${arrowOverlap}px`;
+      }
+
+      if (motion.enabled) {
+        gsap.killTweensOf(tooltip);
+        gsap.fromTo(
+          tooltip,
+          { y: 6, scale: 0.985, autoAlpha: 0 },
+          { y: 0, scale: 1, autoAlpha: 1, duration: 0.18, ease: "power2.out", clearProps: "transform,opacity,visibility" }
+        );
       }
     }
 
@@ -1626,20 +1834,26 @@
     function selectConversationNode(id, options = {}) {
       activeLeafId = id;
       selectedNodeId = id;
+      setPendingMotion(options.fromAnchor ? "anchor" : "select", { id });
       render();
       if (options.showTooltipTarget) showTooltip(id, options.showTooltipTarget);
-      window.requestAnimationFrame(() => {
-        const target = pathThread.querySelector(`[data-path-node="${id}"]`);
-        if (target) target.scrollIntoView({ block: "center", behavior: "smooth" });
-      });
     }
 
     function render() {
+      const previousVisibleIds = motion.previousVisibleIds;
+      const previousActiveIds = motion.previousActiveIds;
+      const previousSelectedId = motion.previousSelectedId;
       computeLayout();
       zoomValue.textContent = `${Math.round(treeZoom * 100)}%`;
       renderEdges();
       renderNodes();
-      renderPathPanel();
+      renderMessageCard();
+      const currentVisibleIds = visibleNodes().map((node) => node.id);
+      runMotionEffects({ currentVisibleIds, previousVisibleIds, previousActiveIds, previousSelectedId });
+      motion.previousVisibleIds = new Set(currentVisibleIds);
+      motion.previousActiveIds = new Set(activePath());
+      motion.previousSelectedId = selectedNodeId;
+      motion.pending = null;
     }
 
     function centerNode(id) {
@@ -1674,6 +1888,9 @@
       computeLayout();
       viewport.scrollLeft = Math.max(0, (layout.paddingX || 0) + contentX * treeZoom - localX);
       viewport.scrollTop = Math.max(0, (layout.paddingY || 0) + contentY * treeZoom - localY);
+      if (motion.enabled) {
+        gsap.fromTo(zoomValue, { scale: 0.9, autoAlpha: 0.7 }, { scale: 1, autoAlpha: 1, duration: 0.22, ease: "power2.out", clearProps: "transform,opacity,visibility" });
+      }
     }
 
     function showToast(message) {
@@ -1692,7 +1909,7 @@
     tooltipAnchorBtn.addEventListener("click", () => {
       const id = tooltipAnchorBtn.dataset.node;
       if (!id) return;
-      selectConversationNode(id);
+      selectConversationNode(id, { fromAnchor: true });
       hideTooltip();
     });
 
