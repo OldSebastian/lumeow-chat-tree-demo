@@ -536,6 +536,30 @@
       word-break: break-word;
     }
 
+    .message-card__action {
+      display: none;
+      align-items: center;
+      gap: 6px;
+      width: max-content;
+      min-height: 30px;
+      margin-top: 12px;
+      padding: 6px 10px;
+      border: 1px solid rgba(143, 130, 247, 0.26);
+      border-radius: 999px;
+      color: rgba(255, 255, 255, 0.9);
+      background: rgba(143, 130, 247, 0.12);
+      font-size: 12px;
+      font-weight: 720;
+      line-height: 1;
+    }
+
+    .message-card__action::after {
+      content: "↗";
+      color: rgba(193, 186, 255, 0.92);
+      font-size: 12px;
+      line-height: 1;
+    }
+
     .tooltip {
       position: fixed;
       left: 0;
@@ -645,21 +669,18 @@
 
     .tooltip__arrow {
       position: absolute;
-      width: 10px;
+      width: 18px;
       height: 10px;
       background: rgba(24, 24, 27, 0.8);
-      transform: rotate(45deg);
       pointer-events: none;
     }
 
     .tooltip__arrow.is-top {
-      border-right: 1px solid rgba(255, 255, 255, 0.08);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      clip-path: polygon(0 0, 100% 0, 50% 100%);
     }
 
     .tooltip__arrow.is-bottom {
-      border-left: 1px solid rgba(255, 255, 255, 0.08);
-      border-top: 1px solid rgba(255, 255, 255, 0.08);
+      clip-path: polygon(50% 0, 0 100%, 100% 100%);
     }
 
     .toast {
@@ -764,6 +785,14 @@
         line-height: 1.58;
       }
 
+      .tooltip {
+        display: none;
+      }
+
+      .message-card__action {
+        display: inline-flex;
+      }
+
     }
 
     @media (max-width: 480px) {
@@ -837,6 +866,7 @@
             <span class="message-card__count" id="messageCount"></span>
           </div>
           <p class="message-card__text" id="messageText"></p>
+          <button class="message-card__action" id="messageActionBtn" type="button">查看消息</button>
         </div>
       </aside>
     </section>
@@ -1156,6 +1186,8 @@
     const messageName = document.getElementById("messageName");
     const messageCount = document.getElementById("messageCount");
     const messageText = document.getElementById("messageText");
+    const messageActionBtn = document.getElementById("messageActionBtn");
+    const hoverTooltipQuery = window.matchMedia("(hover: hover) and (pointer: fine)");
 
     if (motion.enabled) {
       gsap.defaults({ duration: 0.42, ease: "power2.out", overwrite: "auto" });
@@ -1560,12 +1592,13 @@
         animateNodePulse(selectedNodeId);
         animateCurrentMessage(selectedNodeId, pending.type);
       }
-      if (activeChanged || pending.type === "select" || pending.type === "anchor") {
+      if (activeChanged) {
         animateActiveRoute();
       }
     }
 
     function showTooltip(nodeId, target) {
+      if (!hoverTooltipQuery.matches) return;
       const node = nodes[nodeId];
       if (!node || !target) return;
       tooltipAvatar.className = `tooltip__avatar ${node.type}`;
@@ -1580,8 +1613,8 @@
       const tipHeight = tooltip.offsetHeight;
       const centerX = rect.left + rect.width / 2;
       const gap = 26;
-      const arrowSize = 10;
-      const arrowOverlap = 4;
+      const arrowWidth = 18;
+      const arrowOverlap = 9;
 
       let placement = "top";
       let top = rect.top - tipHeight - gap;
@@ -1594,7 +1627,7 @@
       tooltip.style.left = `${left}px`;
       tooltip.style.top = `${top}px`;
 
-      const arrowX = clamp(centerX - left, 20, tipWidth - 20) - arrowSize / 2;
+      const arrowX = clamp(centerX - left, 24, tipWidth - 24) - arrowWidth / 2;
       tooltipArrow.style.left = `${arrowX}px`;
       tooltipArrow.classList.toggle("is-top", placement === "top");
       tooltipArrow.classList.toggle("is-bottom", placement !== "top");
@@ -1630,11 +1663,12 @@
     }
 
     function selectConversationNode(id, options = {}) {
-      activeLeafId = id;
+      if (!nodes[id]) return;
+      activeLeafId = layoutSpineLeafId;
       selectedNodeId = id;
       setPendingMotion(options.fromAnchor ? "anchor" : "select", { id });
       render();
-      if (options.showTooltipTarget) showTooltip(id, options.showTooltipTarget);
+      if (options.showTooltipTarget && hoverTooltipQuery.matches) showTooltip(id, options.showTooltipTarget);
     }
 
     function render() {
@@ -1708,7 +1742,12 @@
       const id = tooltipAnchorBtn.dataset.node;
       if (!id) return;
       selectConversationNode(id, { fromAnchor: true });
+      centerNode(id);
       hideTooltip();
+    });
+    messageActionBtn.addEventListener("click", () => {
+      selectConversationNode(selectedNodeId, { fromAnchor: true });
+      centerNode(selectedNodeId);
     });
 
     function wheelDeltaInPixels(event) {
@@ -1767,15 +1806,18 @@
       centerNode(selectedNodeId);
     });
     nodeLayer.addEventListener("mouseover", (event) => {
+      if (!hoverTooltipQuery.matches) return;
       const nodeButton = event.target.closest?.("[data-node]");
       if (nodeButton) showTooltip(nodeButton.dataset.node, nodeButton);
     });
     nodeLayer.addEventListener("mouseout", (event) => {
+      if (!hoverTooltipQuery.matches) return;
       const nodeButton = event.target.closest?.("[data-node]");
       const next = event.relatedTarget?.closest?.("[data-node]");
       if (nodeButton && nodeButton !== next && !tooltip.contains(event.relatedTarget)) scheduleTooltipHide();
     });
     nodeLayer.addEventListener("focusin", (event) => {
+      if (!hoverTooltipQuery.matches) return;
       const nodeButton = event.target.closest?.("[data-node]");
       if (nodeButton) showTooltip(nodeButton.dataset.node, nodeButton);
     });
@@ -1789,7 +1831,7 @@
       const id = nodeButton.dataset.node;
       selectConversationNode(id);
       const fresh = nodeLayer.querySelector(`[data-node="${id}"]`);
-      if (fresh) showTooltip(id, fresh);
+      if (fresh && hoverTooltipQuery.matches) showTooltip(id, fresh);
     });
     viewport.addEventListener("scroll", hideTooltip, { passive: true });
 
