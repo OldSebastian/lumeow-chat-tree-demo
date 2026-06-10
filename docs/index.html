@@ -539,24 +539,26 @@
     .message-card__action {
       display: none;
       align-items: center;
-      gap: 6px;
+      gap: 8px;
       width: max-content;
-      min-height: 30px;
+      min-height: 36px;
       margin-top: 12px;
-      padding: 6px 10px;
-      border: 1px solid rgba(143, 130, 247, 0.26);
+      padding: 8px 14px;
+      border: 1px solid rgba(143, 130, 247, 0.5);
       border-radius: 999px;
-      color: rgba(255, 255, 255, 0.9);
-      background: rgba(143, 130, 247, 0.12);
-      font-size: 12px;
-      font-weight: 720;
+      color: rgba(248, 247, 255, 0.96);
+      background: linear-gradient(180deg, rgba(82, 72, 142, 0.46), rgba(50, 43, 98, 0.42));
+      box-shadow: 0 14px 34px -24px rgba(143, 130, 247, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      font-size: 13px;
+      font-weight: 760;
       line-height: 1;
+      letter-spacing: 0;
     }
 
     .message-card__action::after {
       content: "↗";
-      color: rgba(193, 186, 255, 0.92);
-      font-size: 12px;
+      color: rgba(218, 213, 255, 0.96);
+      font-size: 13px;
       line-height: 1;
     }
 
@@ -638,32 +640,35 @@
       align-self: flex-start;
       display: inline-flex;
       align-items: center;
-      gap: 6px;
-      min-height: 30px;
+      gap: 8px;
+      min-height: 36px;
       margin-top: 2px;
-      padding: 6px 10px;
-      border: 1px solid rgba(143, 130, 247, 0.26);
+      padding: 8px 14px;
+      border: 1px solid rgba(143, 130, 247, 0.5);
       border-radius: 999px;
-      color: rgba(255, 255, 255, 0.9);
-      background: rgba(143, 130, 247, 0.12);
-      font-size: 12px;
-      font-weight: 720;
+      color: rgba(248, 247, 255, 0.96);
+      background: linear-gradient(180deg, rgba(82, 72, 142, 0.46), rgba(50, 43, 98, 0.42));
+      box-shadow: 0 14px 34px -24px rgba(143, 130, 247, 0.9), inset 0 1px 0 rgba(255, 255, 255, 0.12);
+      font-size: 13px;
+      font-weight: 760;
       line-height: 1;
-      transition: background 160ms ease, border-color 160ms ease, transform 160ms ease;
+      letter-spacing: 0;
+      transition: background 160ms ease, border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
     }
 
     .tooltip__anchor::after {
       content: "↗";
-      color: rgba(193, 186, 255, 0.92);
-      font-size: 12px;
+      color: rgba(218, 213, 255, 0.96);
+      font-size: 13px;
       line-height: 1;
     }
 
     .tooltip__anchor:hover,
     .tooltip__anchor:focus-visible {
       outline: none;
-      border-color: rgba(143, 130, 247, 0.48);
-      background: rgba(143, 130, 247, 0.2);
+      border-color: rgba(169, 157, 255, 0.72);
+      background: linear-gradient(180deg, rgba(98, 85, 166, 0.56), rgba(61, 52, 116, 0.5));
+      box-shadow: 0 18px 44px -24px rgba(143, 130, 247, 1), inset 0 1px 0 rgba(255, 255, 255, 0.16);
       transform: translateY(-1px);
     }
 
@@ -866,7 +871,7 @@
             <span class="message-card__count" id="messageCount"></span>
           </div>
           <p class="message-card__text" id="messageText"></p>
-          <button class="message-card__action" id="messageActionBtn" type="button">查看消息</button>
+          <button class="message-card__action" id="messageActionBtn" type="button">切换并跳转</button>
         </div>
       </aside>
     </section>
@@ -876,7 +881,7 @@
     <span class="tooltip__content">
       <span class="tooltip__label" id="tooltipLabel"></span>
       <span class="tooltip__body" id="tooltipBody"></span>
-      <button class="tooltip__anchor" id="tooltipAnchorBtn" type="button">查看消息</button>
+      <button class="tooltip__anchor" id="tooltipAnchorBtn" type="button">切换并跳转</button>
     </span>
     <i class="tooltip__arrow" id="tooltipArrow"></i>
   </div>
