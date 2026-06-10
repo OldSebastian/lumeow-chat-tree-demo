@@ -418,10 +418,6 @@
       animation: node-selection-pop 520ms var(--motion-spring);
     }
 
-    .chat-node.branch-enter {
-      animation: branch-node-enter 560ms var(--motion-spring) backwards;
-    }
-
     @keyframes node-selection-pop {
       0% {
         transform: translate(-50%, -50%) scale(0.82);
@@ -435,107 +431,6 @@
 
       100% {
         transform: translate(-50%, -50%) scale(1);
-      }
-    }
-
-    @keyframes branch-node-enter {
-      0% {
-        opacity: 0;
-        transform: translate(-50%, -34%) scale(0.72);
-        filter: blur(5px);
-      }
-
-      70% {
-        opacity: 1;
-        transform: translate(-50%, -52%) scale(1.08);
-        filter: blur(0);
-      }
-
-      100% {
-        opacity: 1;
-        transform: translate(-50%, -50%) scale(1);
-        filter: blur(0);
-      }
-    }
-
-    .branch-toggle {
-      position: absolute;
-      left: calc(var(--x) * 1px);
-      top: calc(var(--y) * 1px);
-      z-index: 7;
-      min-width: 36px;
-      height: 26px;
-      padding: 0 10px;
-      transform: translate(34px, 8px);
-      border: 1px solid rgba(143, 130, 247, 0.2);
-      border-radius: 999px;
-      color: rgba(247, 247, 248, 0.82);
-      background: rgba(21, 21, 24, 0.84);
-      box-shadow: 0 12px 34px -22px rgba(0, 0, 0, 0.9), 0 0 0 1px rgba(255, 255, 255, 0.045) inset;
-      backdrop-filter: blur(24px);
-      -webkit-backdrop-filter: blur(24px);
-      font-size: 12px;
-      font-weight: 760;
-      line-height: 1;
-      transition: border-color 160ms ease, background 160ms ease, box-shadow 160ms ease, transform 160ms ease;
-      will-change: transform, opacity;
-    }
-
-    .branch-toggle:not(.expanded)::before {
-      content: "";
-      position: absolute;
-      inset: -6px;
-      border: 1px solid rgba(143, 130, 247, 0.22);
-      border-radius: inherit;
-      opacity: 0;
-      animation: branch-toggle-breathe 2.6s ease-in-out infinite;
-      pointer-events: none;
-    }
-
-    .branch-toggle:hover,
-    .branch-toggle:focus-visible {
-      outline: none;
-      transform: translate(34px, 7px);
-      border-color: rgba(143, 130, 247, 0.48);
-      background: rgba(45, 40, 70, 0.92);
-      box-shadow: 0 16px 44px -24px rgba(143, 130, 247, 0.55), 0 0 0 1px rgba(255, 255, 255, 0.07) inset;
-    }
-
-    .branch-toggle.expanded {
-      border-color: rgba(86, 200, 245, 0.36);
-      color: rgba(232, 246, 255, 0.92);
-      background: rgba(32, 58, 72, 0.82);
-    }
-
-    .branch-toggle.toggle-pop {
-      animation: branch-toggle-pop 360ms var(--motion-spring);
-    }
-
-    @keyframes branch-toggle-breathe {
-      0%,
-      72%,
-      100% {
-        opacity: 0;
-        transform: scale(0.86);
-      }
-
-      28% {
-        opacity: 0.8;
-        transform: scale(1);
-      }
-    }
-
-    @keyframes branch-toggle-pop {
-      0% {
-        transform: translate(34px, 8px) scale(0.86);
-      }
-
-      64% {
-        transform: translate(34px, 7px) scale(1.08);
-      }
-
-      100% {
-        transform: translate(34px, 8px) scale(1);
       }
     }
 
@@ -836,19 +731,6 @@
       .chat-node {
         width: 52px;
         height: 52px;
-      }
-
-      .branch-toggle {
-        height: 24px;
-        min-width: 34px;
-        padding: 0 9px;
-        transform: translate(31px, 7px);
-        font-size: 11px;
-      }
-
-      .branch-toggle:hover,
-      .branch-toggle:focus-visible {
-        transform: translate(31px, 6px);
       }
 
       .message-card {
@@ -1176,7 +1058,7 @@
           parent: "long81",
           branches: [
             ["叫醒小猫", "我要不要叫醒角落那只小猫？", "露喵摇头：可以，但它醒来以后会把路线改写成另一种心情。"],
-            ["绕过水洼", "我绕过水洼，不踩进去。", "水洼里倒映出一条未展开的分支。"],
+            ["绕过水洼", "我绕过水洼，不踩进去。", "水洼里倒映出另一条旁支的影子。"],
             ["靠近窗边", "我靠近窗边看看外面。", "窗外不是夜色，是这段会话滚动到很后面的样子。"]
           ]
         },
@@ -1185,7 +1067,7 @@
           branches: [
             ["最后确认", "我想在结束前确认一次当前选择。", "露喵说：确认会把这条路钉住，但不会锁死其他可能。"],
             ["存档节点", "把这里当成一个存档点吧。", "这一刻被轻轻折起，放进了当前路径的口袋里。"],
-            ["临时岔路", "我想临时试一条岔路，但不改变主线。", "露喵眨眼：那就展开看看，回来时主线还在原地。"]
+            ["临时岔路", "我想临时试一条岔路，但不改变主线。", "露喵眨眼：那就走近看看，回来时主线还在原地。"]
           ]
         }
       ];
@@ -1246,7 +1128,6 @@
     let userChangedZoom = false;
     let panGesture = null;
     let tooltipHideTimer = null;
-    const expandedBranchIds = new Set();
     const motion = {
       enabled: Boolean(window.gsap) && !window.matchMedia("(prefers-reduced-motion: reduce)").matches,
       initialized: false,
@@ -1278,13 +1159,9 @@
       gsap.defaults({ duration: 0.42, ease: "power2.out", overwrite: "auto" });
     }
 
-    function isNodeVisible(node) {
-      return !node.branchGroupParent || expandedBranchIds.has(node.branchGroupParent);
-    }
-
     function childrenOf(id) {
       return Object.values(nodes)
-        .filter((node) => node.parent === id && isNodeVisible(node))
+        .filter((node) => node.parent === id)
         .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
     }
 
@@ -1292,44 +1169,12 @@
       const visible = [];
       function walk(id) {
         const node = nodes[id];
-        if (!node || !isNodeVisible(node)) return;
+        if (!node) return;
         visible.push(node);
         childrenOf(id).forEach((child) => walk(child.id));
       }
       walk("root");
       return visible;
-    }
-
-    function hiddenBranchRootsOf(id) {
-      return Object.values(nodes)
-        .filter((node) => node.parent === id && node.branchRoot)
-        .sort((a, b) => (a.order ?? 0) - (b.order ?? 0));
-    }
-
-    function hasBranchGroup(id) {
-      return hiddenBranchRootsOf(id).length > 0;
-    }
-
-    function branchGroupContains(parentId, nodeId) {
-      return pathToRoot(nodeId).some((id) => nodes[id]?.branchGroupParent === parentId);
-    }
-
-    function toggleBranchGroup(parentId) {
-      if (!hasBranchGroup(parentId)) return;
-      const expanded = !expandedBranchIds.has(parentId);
-      if (expandedBranchIds.has(parentId)) {
-        expandedBranchIds.delete(parentId);
-        if (branchGroupContains(parentId, activeLeafId)) {
-          activeLeafId = parentId;
-          selectedNodeId = parentId;
-        }
-      } else {
-        expandedBranchIds.add(parentId);
-      }
-      setPendingMotion("branch", { parentId, expanded });
-      render();
-      const fresh = nodeLayer.querySelector(`[data-node="${parentId}"]`);
-      if (fresh) showTooltip(parentId, fresh);
     }
 
     function pathToRoot(id) {
@@ -1575,24 +1420,7 @@
           `;
         })
         .join("");
-      const branchButtons = visibleNodes()
-        .filter((node) => hasBranchGroup(node.id))
-        .map((node) => {
-          const count = hiddenBranchRootsOf(node.id).length;
-          const expanded = expandedBranchIds.has(node.id);
-          const classes = ["branch-toggle", expanded ? "expanded" : ""].filter(Boolean).join(" ");
-          return `
-            <button
-              class="${classes}"
-              type="button"
-              style="--x:${nodePosition(node.id).x}; --y:${nodePosition(node.id).y}"
-              data-branch-toggle="${node.id}"
-              aria-label="${expanded ? "收起" : "展开"} ${count} 条分支"
-            >${expanded ? "收起" : `+${count}`}</button>
-          `;
-        })
-        .join("");
-      nodeLayer.innerHTML = nodeButtons + branchButtons;
+      nodeLayer.innerHTML = nodeButtons;
     }
 
     function speakerName(node) {
@@ -1696,23 +1524,10 @@
       );
     }
 
-    function animateBranchToggle(parentId) {
-      if (!motion.enabled || !parentId) return;
-      const toggle = nodeLayer.querySelector(escapedDataSelector("data-branch-toggle", parentId));
-      if (!toggle) return;
-      gsap.killTweensOf(toggle);
-      gsap.fromTo(
-        toggle,
-        { scale: 0.88, y: 2 },
-        { scale: 1, y: 0, duration: 0.36, ease: "back.out(2.2)", clearProps: "transform" }
-      );
-    }
-
     function runMotionEffects({ currentVisibleIds, previousVisibleIds, previousActiveIds, previousSelectedId }) {
       if (!motion.enabled) return;
 
       const pending = motion.pending || {};
-      const enteringIds = currentVisibleIds.filter((id) => !previousVisibleIds.has(id));
       const activeIds = new Set(activePath());
       const activeChanged = activeIds.size !== previousActiveIds.size
         || [...activeIds].some((id) => !previousActiveIds.has(id));
@@ -1720,7 +1535,6 @@
 
       if (!motion.initialized) {
         const initialNodes = currentVisibleIds
-          .slice(0, 140)
           .map((id) => nodeLayer.querySelector(escapedDataSelector("data-node", id)))
           .filter(Boolean);
         gsap.timeline({ defaults: { ease: "power2.out" } })
@@ -1738,26 +1552,8 @@
             0.08
           );
         motion.initialized = true;
-      } else if (pending.type === "branch" && enteringIds.length) {
-        const enteringNodes = enteringIds
-          .map((id) => nodeLayer.querySelector(escapedDataSelector("data-node", id)))
-          .filter(Boolean);
-        gsap.fromTo(
-          enteringNodes,
-          { "--node-scale": 0.72, "--node-opacity": 0, filter: "blur(4px)" },
-          {
-            "--node-scale": 1,
-            "--node-opacity": (index, target) => target.classList.contains("inactive") ? 0.2 : 1,
-            filter: "blur(0px)",
-            duration: 0.46,
-            stagger: { each: 0.035, from: "start" },
-            ease: "back.out(1.65)",
-            clearProps: "--node-scale,--node-opacity,filter"
-          }
-        );
       }
 
-      if (pending.type === "branch") animateBranchToggle(pending.parentId);
       if (selectedChanged || pending.type === "select" || pending.type === "anchor") {
         animateNodePulse(selectedNodeId);
         animateCurrentMessage(selectedNodeId, pending.type);
@@ -1986,11 +1782,6 @@
       hideTooltip();
     });
     nodeLayer.addEventListener("click", (event) => {
-      const branchToggle = event.target.closest?.("[data-branch-toggle]");
-      if (branchToggle) {
-        toggleBranchGroup(branchToggle.dataset.branchToggle);
-        return;
-      }
       const nodeButton = event.target.closest?.("[data-node]");
       if (!nodeButton) return;
       const id = nodeButton.dataset.node;
