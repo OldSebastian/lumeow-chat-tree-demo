@@ -416,7 +416,7 @@
       line-height: 1;
       letter-spacing: 0;
       opacity: var(--jump-opacity, 1);
-      transform: translate(38px, -50%);
+      transform: translate(52px, -50%);
       transition: filter 160ms ease, transform 160ms ease, opacity 160ms ease;
       white-space: nowrap;
     }
@@ -432,7 +432,7 @@
     .node-jump-action:focus-visible {
       outline: none;
       filter: brightness(1.08);
-      transform: translate(38px, calc(-50% - 1px));
+      transform: translate(52px, calc(-50% - 1px));
     }
 
     .chat-node.selection-pop {
@@ -1407,8 +1407,8 @@
             type="button"
             style="--x:${selectedPosition.x}; --y:${selectedPosition.y}"
             data-jump-action="${selectedNodeId}"
-            aria-label="切换并跳转到对应会话"
-          >切换并跳转</button>
+            aria-label="跳转到对应会话"
+          >跳转</button>
         `
         : "";
       nodeLayer.innerHTML = nodeButtons + jumpAction;
@@ -1759,7 +1759,7 @@
     nodeLayer.addEventListener("click", (event) => {
       const jumpButton = event.target.closest?.("[data-jump-action]");
       if (jumpButton) {
-        showToast("Demo 中这里会切换并跳转到对应会话。");
+        showToast("Demo 中这里会跳转到对应会话。");
         hideTooltip();
         return;
       }
