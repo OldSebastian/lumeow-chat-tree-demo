@@ -100,29 +100,34 @@
 
     .close-button {
       position: relative;
-      width: 22px;
-      height: 22px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 32px;
+      height: 32px;
+      margin-left: -6px;
       opacity: 0.82;
-    }
-
-    .close-button::before,
-    .close-button::after {
-      content: "";
-      position: absolute;
-      left: 10px;
-      top: 2px;
-      width: 1.5px;
-      height: 18px;
       border-radius: 999px;
-      background: currentColor;
+      transition: color 160ms ease, background 160ms ease, opacity 160ms ease;
     }
 
-    .close-button::before {
-      transform: rotate(45deg);
+    .close-button:hover,
+    .close-button:focus-visible {
+      outline: none;
+      color: rgba(247, 247, 248, 0.88);
+      background: rgba(255, 255, 255, 0.055);
+      opacity: 1;
     }
 
-    .close-button::after {
-      transform: rotate(-45deg);
+    .close-button__icon {
+      width: 20px;
+      height: 20px;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      fill: none;
+      pointer-events: none;
     }
 
     .top-meta {
@@ -787,7 +792,12 @@
 <body>
   <main class="tree-modal" aria-label="Lumeow 聊天树分支地图 Demo">
     <header class="topbar">
-      <button class="close-button" type="button" aria-label="关闭聊天树"></button>
+      <button class="close-button" type="button" aria-label="返回">
+        <svg class="close-button__icon" viewBox="0 0 24 24" aria-hidden="true">
+          <path d="m12 19-7-7 7-7"></path>
+          <path d="M19 12H5"></path>
+        </svg>
+      </button>
       <div class="top-meta" aria-label="缩放控制">
         <div class="zoom-controls">
           <button class="zoom-button" type="button" id="zoomOutBtn" aria-label="缩小">−</button>
@@ -1677,7 +1687,7 @@
     document.getElementById("zoomOutBtn").addEventListener("click", () => setTreeZoom(treeZoom / 1.16));
     document.getElementById("zoomInBtn").addEventListener("click", () => setTreeZoom(treeZoom * 1.16));
     document.getElementById("zoomResetBtn").addEventListener("click", () => setTreeZoom(1));
-    document.querySelector(".close-button").addEventListener("click", () => showToast("Demo 中关闭按钮仅展示入口形态。"));
+    document.querySelector(".close-button").addEventListener("click", () => showToast("Demo 中返回按钮仅展示入口形态。"));
     tooltip.addEventListener("mouseenter", () => window.clearTimeout(tooltipHideTimer));
     tooltip.addEventListener("mouseleave", scheduleTooltipHide);
 
