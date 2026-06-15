@@ -1649,7 +1649,7 @@
       });
     }
 
-    function showLatestNodeAboveMessageCard(id, gap = 20, behavior = "auto") {
+    function showLatestNodeAboveMessageCard(id, gap = 40, behavior = "auto") {
       const node = nodePosition(id);
       const nodeElement = nodeLayer.querySelector(escapedDataSelector("data-node", id));
       const selectedVisualBleed = 20;
@@ -1760,7 +1760,7 @@
       if (userChangedZoom) return;
       initialZoomApplied = false;
       render();
-      window.requestAnimationFrame(() => showLatestNodeAboveMessageCard(selectedNodeId, 20, "auto"));
+      window.requestAnimationFrame(() => showLatestNodeAboveMessageCard(selectedNodeId, 40, "auto"));
     });
     nodeLayer.addEventListener("mouseover", (event) => {
       if (!hoverTooltipQuery.matches) return;
@@ -1799,7 +1799,7 @@
     viewport.addEventListener("scroll", hideTooltip, { passive: true });
 
     render();
-    window.requestAnimationFrame(() => showLatestNodeAboveMessageCard(selectedNodeId, 20, "auto"));
+    window.requestAnimationFrame(() => showLatestNodeAboveMessageCard(selectedNodeId, 40, "auto"));
   </script>
 </body>
 </html>
