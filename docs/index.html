@@ -1649,6 +1649,21 @@
       });
     }
 
+    function showLatestNodeAboveMessageCard(id, gap = 20, behavior = "auto") {
+      const node = nodePosition(id);
+      const nodeElement = nodeLayer.querySelector(escapedDataSelector("data-node", id));
+      const nodeRadius = ((nodeElement?.offsetHeight || 56) * treeZoom) / 2;
+      const viewportRect = viewport.getBoundingClientRect();
+      const messageCardRect = messageCard.getBoundingClientRect();
+      const targetBottomInViewport = messageCardRect.top - viewportRect.top - gap;
+      const nodeBottomInCanvas = graphCanvas.offsetTop + (layout.paddingY || 0) + node.y * treeZoom + nodeRadius;
+      viewport.scrollTo({
+        left: Math.max(0, graphCanvas.offsetLeft + (layout.paddingX || 0) + node.x * treeZoom - viewport.clientWidth / 2),
+        top: Math.max(0, nodeBottomInCanvas - targetBottomInViewport),
+        behavior
+      });
+    }
+
     function clamp(value, min, max) {
       return Math.min(max, Math.max(min, value));
     }
@@ -1744,7 +1759,7 @@
       if (userChangedZoom) return;
       initialZoomApplied = false;
       render();
-      centerNode(selectedNodeId);
+      window.requestAnimationFrame(() => showLatestNodeAboveMessageCard(selectedNodeId, 20, "auto"));
     });
     nodeLayer.addEventListener("mouseover", (event) => {
       if (!hoverTooltipQuery.matches) return;
@@ -1783,7 +1798,7 @@
     viewport.addEventListener("scroll", hideTooltip, { passive: true });
 
     render();
-    window.requestAnimationFrame(() => centerNode("root"));
+    window.requestAnimationFrame(() => showLatestNodeAboveMessageCard(selectedNodeId, 20, "auto"));
   </script>
 </body>
 </html>
