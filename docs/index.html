@@ -1652,7 +1652,8 @@
     function showLatestNodeAboveMessageCard(id, gap = 20, behavior = "auto") {
       const node = nodePosition(id);
       const nodeElement = nodeLayer.querySelector(escapedDataSelector("data-node", id));
-      const nodeRadius = ((nodeElement?.offsetHeight || 56) * treeZoom) / 2;
+      const selectedVisualBleed = 20;
+      const nodeRadius = (((nodeElement?.offsetHeight || 56) / 2) + selectedVisualBleed) * treeZoom;
       const viewportRect = viewport.getBoundingClientRect();
       const messageCardRect = messageCard.getBoundingClientRect();
       const targetBottomInViewport = messageCardRect.top - viewportRect.top - gap;
